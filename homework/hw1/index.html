@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Homework 1: from private key to public key with elliptic-curve scalar multiplication on a toy curve, with a slowed-down visualisation and a statistical exploration of the results.">
+  <meta name="theme-color" content="#fbfcfa">
+  <title>Statistics in Cybersecurity</title>
+  <link rel="icon" type="image/png" href="../../images/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="../../css/theme.css">
+  <link rel="stylesheet" href="../../css/base.css">
+  <link rel="stylesheet" href="../../css/layout.css">
+  <link rel="stylesheet" href="../../css/components.css">
+  <link rel="stylesheet" href="./visualizer.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"></script>
+  <script defer src="../../js/homework-data.js"></script>
+  <script defer src="../../js/render.js"></script>
+  <script defer src="../../js/main.js"></script>
+  <script defer src="./ecc.js"></script>
+  <script defer src="./visualizer.js"></script>
+  <script defer src="./hw1.js"></script>
+</head>
+<body>
+  <div class="site-shell">
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="../../index.html" aria-label="Statistics in Cybersecurity home">
+          <i class="fa-solid fa-book-open brand-icon" aria-hidden="true"></i>
+          <span>Giada De Sanctis 2046739</span>
+        </a>
+        <div class="header-actions">
+          <nav class="site-nav" id="primary-navigation" data-site-nav aria-label="Primary navigation">
+            <ul class="nav-links">
+              <li><a class="nav-link" data-nav-section="home" href="../../index.html"><i class="fa-solid fa-house nav-icon" aria-hidden="true"></i>Home</a></li>
+              <li><a class="nav-link" data-nav-section="homework" href="../../homework.html"><i class="fa-solid fa-book-open nav-icon" aria-hidden="true"></i>Homework</a></li>
+              <li><a class="nav-link" data-nav-section="about" href="../../about.html"><i class="fa-solid fa-user nav-icon" aria-hidden="true"></i>About</a></li>
+            </ul>
+          </nav>
+          <button class="menu-toggle" type="button" data-menu-toggle aria-label="Open navigation menu" aria-controls="primary-navigation" aria-expanded="false">
+            <span aria-hidden="true">☰</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <article class="post-content container reading-width reading-width--roomy" data-render-math>
+        <header class="post-header">
+          <p class="eyebrow">Homework 1 · Public-key cryptography</p>
+          <h1>Homework 1</h1>
+          <h2>Public-Key Cryptography: From Private Key to Public Key in Ethereum</h2>
+          <p class="homework-date"><i class="fa-regular fa-calendar" aria-hidden="true"></i><time datetime="2026-10-10">10/10/2026</time></p>
+        </header>
+
+        <!-- ============================================================ theory -->
+        <section class="hw-card" aria-labelledby="idea-heading">
+          <h3 id="idea-heading">The idea</h3>
+
+          <p>Every Ethereum account starts from a secret random number, the <strong>private key</strong>. From it we compute the <strong>public key</strong>, which can be shared with everyone. The computation only works in one direction: getting the public key from the private key takes a fraction of a second, but once the public key is known there is no practical way to go back and recover the private key. This is why the public key can be published without putting the account at risk.</p>
+
+          <p>In Ethereum the public key is obtained from the private key with <strong>elliptic-curve scalar multiplication</strong>. An elliptic curve over the integers modulo a prime $p$ is the set of points $(x, y)$ with</p>
+
+          <div class="formula-block">$$y^2 \equiv x^3 + ax + b \pmod p$$</div>
+
+          <p>plus a point at infinity $\mathcal{O}$. Two points $P$ and $Q$ can be <strong>added</strong>: take the line through them (the tangent if $P = Q$), find the third point where it meets the curve and reflect it over the x axis. With slope $\lambda$ the formulas are</p>
+
+          <div class="formula-block">$$\lambda = \begin{cases} \dfrac{y_2 - y_1}{x_2 - x_1} & P \ne Q \\[2mm] \dfrac{3x_1^2 + a}{2y_1} & P = Q \end{cases} \qquad x_3 = \lambda^2 - x_1 - x_2, \qquad y_3 = \lambda(x_1 - x_3) - y_1$$</div>
+
+          <p>where every division is a multiplication by a modular inverse. Adding a base point $G$ to itself $k$ times gives the public key</p>
+
+          <div class="formula-block">$$Q = kG = \underbrace{G + G + \dots + G}_{k \text{ times}}$$</div>
+
+          <p>Computing $Q$ from $k$ is fast; recovering $k$ from $Q$ is the <strong>Elliptic Curve Discrete Logarithm Problem</strong>, which is infeasible on the real curve secp256k1. That is what makes it a <strong>one-way function</strong>. The program below uses the toy curve $y^2 = x^3 + 7 \pmod{17}$, which has the same equation as secp256k1 but only 17 points, with $G = (1, 5)$ and private key $k = 6$.</p>
+        </section>
+
+        <!-- ============================================================ program -->
+        <section class="hw-card" aria-labelledby="generate-heading">
+          <h3 id="generate-heading">Generate the toy public key</h3>
+          <p>The program prints $G, 2G, \dots, kG$ by repeated addition, then computes the same result with <strong>double-and-add</strong>, the faster method for large $k$: it reads the bits of $k$, doubles at every bit and adds $G$ when the bit is 1.</p>
+          <form class="lab-controls" data-toy-form>
+            <label><span>Base point <em>G</em></span> <select data-toy-base></select></label>
+            <label><span>Private key <em>k</em></span> <input type="number" min="1" max="10000" value="6" data-toy-k></label>
+            <button class="lab-button" type="submit">Compute Q = kG</button>
+          </form>
+          <div class="keygen" data-toy-output aria-live="polite"></div>
+        </section>
+
+        <section class="hw-card" aria-labelledby="viz-heading">
+          <h3 id="viz-heading">Slowed-down visualisation</h3>
+          <p>Over $\mathbb{F}_{17}$ the curve is a set of grid points and a "line" wraps around the grid. Each operation is shown in four phases: the operands, the line, the third intersection $-R$ and its reflection $R$. Press <strong>Play</strong>, or <strong>Step</strong> to go one phase at a time.</p>
+          <div data-ecc-visualizer></div>
+        </section>
+
+        <!-- ============================================================ statistics -->
+        <section class="hw-card" aria-labelledby="stats-heading" data-stats>
+          <h3 id="stats-heading">Statistical exploration</h3>
+          <p>On the toy curve every private key can be tried, so the results are <em>exact</em>. Choose a base point: its order decides how many private keys exist, and everything below is computed over all of them.</p>
+          <div class="lab-controls">
+            <label>Base point <select aria-label="Base point"></select></label>
+          </div>
+
+          <h4>Distribution of x and y, frequency of individual values</h4>
+          <div class="chart-grid">
+            <figure class="chart"><figcaption><strong>Distribution of x</strong>How many public keys have each x</figcaption><div data-chart="x"></div></figure>
+            <figure class="chart"><figcaption><strong>Distribution of y</strong>How many public keys have each y</figcaption><div data-chart="y"></div></figure>
+          </div>
+          <p>x is far from uniform: only the 9 values for which $x^3 + 7$ is a square modulo 17 can appear, each twice, as $(x, y)$ and $(x, -y)$. With $G = (1, 5)$ only 4 values appear. With a generator of order 18 instead, every y appears exactly once.</p>
+
+          <h4>Apparent uniformity</h4>
+          <div class="stat-row" data-uniformity></div>
+          <p>Every key gives a different point: $k \mapsto kG$ is a <strong>bijection</strong>, so a uniform private key gives an exactly uniform public key. Only the single coordinates look non-uniform.</p>
+
+          <h4>Distribution of bits</h4>
+          <div class="chart-grid">
+            <figure class="chart"><figcaption><strong>Share of ones in each bit of x and y</strong>x4 and y4 are the most significant bits</figcaption><div data-chart="bits"></div></figure>
+            <p>Coordinates go from 0 to 16, so the most significant bit (x4, y4) is 1 only for the value 16 and is almost always 0. The other bits are not balanced either, because only a few values appear. On secp256k1, where $p$ is very close to $2^{256}$, this bias disappears.</p>
+          </div>
+
+          <h4>Correlation and avalanche</h4>
+          <div class="stat-row" data-correlation></div>
+          <p>For $G = (1, 5)$ the Pearson correlation between $k$ and $x$ is 0, but the table below shows the mirror symmetry $x(k) = x(9 - k)$, because $(9 - k)G = -kG$: Pearson only sees linear dependence. <strong>Avalanche</strong> is the share of the 10 output bits that change when one bit of $k$ is flipped; it is close to 50%, but with so few bits it means little.</p>
+          <div data-table></div>
+
+          <h4>One-way function or hash function?</h4>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th scope="col">Property</th><th scope="col">Elliptic-curve one-way function</th><th scope="col">Cryptographic hash function</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Hard to invert</th><td>Essential (ECDLP)</td><td>Essential</td></tr>
+                <tr><th scope="row">Uniform output</th><td>Essential, exact (bijection)</td><td>Required</td></tr>
+                <tr><th scope="row">Uniform coordinates and bits</th><td>Not required</td><td>Required</td></tr>
+                <tr><th scope="row">No correlation, avalanche</th><td>Not design goals</td><td>Design criteria</td></tr>
+                <tr><th scope="row">No algebraic structure</th><td>The opposite: $(a + b)G = aG + bG$ is needed for signatures</td><td>Essential</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>The meaningful property for the one-way function is that it is hard to invert, which no statistic can measure. Uniform bits, no correlation and avalanche are properties of hash functions: the toy curve fails them, and it does not need them.</p>
+        </section>
+
+        <!-- ============================================================ conclusion -->
+        <section class="hw-card" aria-labelledby="conclusion-heading">
+          <h3 id="conclusion-heading">Conclusion</h3>
+          <p>The program shows the forward direction of the one-way function: from $k = 6$ and $G = (1, 5)$ we get the toy public key $Q = (5, 8)$, and double-and-add reaches it in about $\log_2 k$ operations instead of $k - 1$. The statistics split the properties into two groups:</p>
+          <ul>
+            <li><strong>What matters for the one-way function holds.</strong> Every private key gives a different point, so a random key gives a perfectly uniform public key, with no key more likely than another.</li>
+            <li><strong>What matters for a hash function does not.</strong> Coordinates and bits are biased, the zero correlation hides the mirror symmetry, and the structure $(a + b)G = aG + bG$ links the outputs of related inputs. The curve does not need these properties: signatures rely on exactly that structure.</li>
+            <li><strong>Hardness cannot be measured.</strong> On the toy curve $k$ is found by trying 8 values. The one-way property only holds at the size of secp256k1, about $2^{256}$ points, and no statistical test can show it.</li>
+          </ul>
+          <p>Ethereum uses both tools: the public key comes from the curve, and the address is a Keccak-256 hash of it, which adds the uniformity and avalanche that a curve point lacks.</p>
+        </section>
+      </article>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <p class="footer-title">Statistics in Cybersecurity</p>
+        <nav class="footer-nav" aria-label="Footer navigation">
+          <a href="../../index.html"><i class="fa-solid fa-house" aria-hidden="true"></i>Home</a>
+          <a href="../../homework.html"><i class="fa-solid fa-book-open" aria-hidden="true"></i>Homework</a>
+          <a href="../../about.html"><i class="fa-solid fa-user" aria-hidden="true"></i>About</a>
+        </nav>
+        <div class="footer-contact">
+          <a href="mailto:desanctis.2046739@studenti.uniroma1.it"><i class="fa-regular fa-envelope" aria-hidden="true"></i>desanctis.2046739@studenti.uniroma1.it</a>
+          <p><i class="fa-solid fa-id-card" aria-hidden="true"></i>Matricola 2046739</p>
+        </div>
+        <p class="footer-copyright">© <span data-current-year></span> Giada De Sanctis</p>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

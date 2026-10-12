@@ -1,0 +1,260 @@
+/* Styles for visualizer.js. Override the --viz-* variables to re-theme it. */
+.ecc-viz {
+  --viz-accent: #563b6b;
+  --viz-accent-soft: #e2d8e9;
+  --viz-third: #b0476b;
+  --viz-line: #c4b2d2;
+  --viz-grid: #ece8ef;
+  --viz-curve: #9b8aa8;
+  --viz-text: #252525;
+  --viz-muted: #666666;
+  --viz-surface: #ffffff;
+  --viz-border: #d6d6d6;
+
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--viz-border);
+  border-radius: 12px;
+  background: var(--viz-surface);
+  color: var(--viz-text);
+}
+
+.ecc-viz-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.75rem 1rem;
+}
+
+.ecc-viz-controls label {
+  display: grid;
+  gap: 0.25rem;
+  color: var(--viz-muted);
+  font-size: 0.85em;
+  font-weight: 600;
+}
+
+.ecc-viz-controls label em {
+  font-family: Georgia, serif;
+}
+
+.ecc-viz-controls input[type="number"],
+.ecc-viz-controls select {
+  min-height: 34px;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--viz-border);
+  border-radius: 6px;
+  background: var(--viz-surface);
+  color: var(--viz-text);
+  font: inherit;
+  font-weight: 400;
+}
+
+.ecc-viz-controls input[type="number"] {
+  width: 5.5em;
+}
+
+.ecc-viz-controls input[type="range"] {
+  accent-color: var(--viz-accent);
+}
+
+.ecc-viz-buttons {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.ecc-viz-buttons button {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--viz-accent);
+  border-radius: 999px;
+  background: var(--viz-surface);
+  color: var(--viz-accent);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+
+.ecc-viz-buttons button[data-play] {
+  background: var(--viz-accent);
+  color: #fff;
+}
+
+.ecc-viz-buttons button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.ecc-viz-body {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.ecc-viz-canvas svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.ecc-viz-grid line {
+  stroke: var(--viz-grid);
+  stroke-width: 1;
+}
+
+.ecc-viz-tick {
+  fill: var(--viz-muted);
+  font-size: 11px;
+}
+
+.ecc-viz-axis {
+  fill: var(--viz-muted);
+  font-size: 13px;
+  font-style: italic;
+}
+
+.ecc-viz-curve-point {
+  fill: var(--viz-curve);
+}
+
+.ecc-viz-line-point {
+  fill: var(--viz-line);
+}
+
+.ecc-viz-visited {
+  fill: var(--viz-accent-soft);
+  stroke: var(--viz-accent);
+  stroke-width: 1.5;
+}
+
+.ecc-viz-operand {
+  fill: var(--viz-accent);
+  stroke: var(--viz-surface);
+  stroke-width: 2;
+}
+
+.ecc-viz-third {
+  fill: var(--viz-surface);
+  stroke: var(--viz-third);
+  stroke-width: 2.5;
+}
+
+.ecc-viz-result {
+  fill: var(--viz-third);
+  stroke: var(--viz-surface);
+  stroke-width: 2;
+}
+
+.ecc-viz-reflection {
+  stroke: var(--viz-third);
+  stroke-width: 2;
+  stroke-dasharray: 4 4;
+}
+
+.ecc-viz-label {
+  fill: var(--viz-text);
+  font-size: 12px;
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: var(--viz-surface);
+  stroke-width: 3px;
+}
+
+.ecc-viz-infinity circle {
+  fill: var(--viz-surface);
+  stroke: var(--viz-curve);
+  stroke-width: 1.5;
+}
+
+.ecc-viz-infinity text {
+  fill: var(--viz-muted);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.ecc-viz-infinity text.ecc-viz-tick {
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.ecc-viz-infinity.is-active circle {
+  fill: var(--viz-third);
+  stroke: var(--viz-third);
+}
+
+.ecc-viz-infinity.is-active text:not(.ecc-viz-tick) {
+  fill: #fff;
+}
+
+.ecc-viz-side {
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.ecc-viz-status {
+  min-height: 3.4em;
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  border-left: 3px solid var(--viz-accent);
+  border-radius: 0 6px 6px 0;
+  background: var(--viz-accent-soft);
+  color: var(--viz-text);
+}
+
+.ecc-viz-log {
+  overflow-y: auto;
+  max-height: 340px;
+  margin: 0;
+  padding: 0 0 0 1.4em;
+  color: var(--viz-text);
+  font-size: 0.85em;
+  line-height: 1.5;
+}
+
+.ecc-viz-log li {
+  margin-bottom: 0.45rem;
+  overflow-wrap: anywhere;
+}
+
+.ecc-viz-log .ecc-viz-log-header {
+  margin-left: -1.4em;
+  color: var(--viz-muted);
+  font-weight: 600;
+  list-style: none;
+}
+
+.ecc-viz-bit {
+  display: inline-block;
+  margin-right: 0.4rem;
+  padding: 0 0.35rem;
+  border-radius: 4px;
+  background: var(--viz-accent-soft);
+  color: var(--viz-accent);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85em;
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .ecc-viz-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 1600px) {
+  .ecc-viz {
+    gap: 1.25rem;
+    padding: 1.25rem;
+  }
+
+  .ecc-viz-controls input[type="number"],
+  .ecc-viz-controls select {
+    min-height: 2.6em;
+  }
+}
