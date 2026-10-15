@@ -16,9 +16,10 @@
   const renderCard = (item) => {
     const homeworkNumber = Number.parseInt(item.number, 10);
     const heading = Number.isNaN(homeworkNumber) ? escapeHtml(item.number) : String(homeworkNumber);
+    const label = item.label ? escapeHtml(item.label) : `Homework ${heading}`;
     const title = escapeHtml(item.title);
     const cardLink = item.file
-      ? `<a class="homework-card-link" href="${escapeHtml(item.file)}" aria-label="Open Homework ${heading}: ${title}"></a>`
+      ? `<a class="homework-card-link" href="${escapeHtml(item.file)}" aria-label="Open ${label}: ${title}"></a>`
       : '';
     const cardClass = item.file ? 'homework-card homework-card--linked' : 'homework-card';
 
@@ -27,7 +28,7 @@
       <div class="homework-card-meta">
         <span class="homework-date"><i class="fa-regular fa-calendar" aria-hidden="true"></i><time datetime="${escapeHtml(item.date)}">${escapeHtml(formatDate(item.date))}</time></span>
       </div>
-      <h3>Homework ${heading}</h3>
+      <h3>${label}</h3>
       <p class="homework-card-subtitle">${title}</p>
       <p>${escapeHtml(item.description)}</p>
     </article>`;
@@ -44,7 +45,8 @@
   if (latest && latestLink) {
     latestLink.href = latest.file;
     const homeworkNumber = Number.parseInt(latest.number, 10);
-    latestLink.innerHTML = `View Homework ${homeworkNumber}: ${escapeHtml(latest.title)} <span class="button-arrow" aria-hidden="true">→</span>`;
+    const latestLabel = latest.label ? escapeHtml(latest.label) : `Homework ${homeworkNumber}`;
+    latestLink.innerHTML = `View ${latestLabel}: ${escapeHtml(latest.title)} <span class="button-arrow" aria-hidden="true">→</span>`;
   }
 
   if (window.renderMathInElement) {

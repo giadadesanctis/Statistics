@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Homework 2: the Ethereum wallet pipeline from a mnemonic phrase to a checksummed address (BIP-39, BIP-32, BIP-44, secp256k1, Keccak-256, EIP-55), its history and its statistical properties.">
+  <meta name="description" content="Homework 1 - Exercise 2: the Ethereum wallet pipeline from a mnemonic phrase to a checksummed address (BIP-39, BIP-32, BIP-44, secp256k1, Keccak-256, EIP-55), its history and its statistical properties.">
   <meta name="theme-color" content="#fbfcfa">
   <title>Statistics in Cybersecurity</title>
   <link rel="icon" type="image/png" href="../../images/favicon.png">
@@ -50,8 +50,8 @@
     <main class="main-content">
       <article class="post-content container reading-width reading-width--roomy" data-render-math>
         <header class="post-header">
-          <p class="eyebrow">Homework 2 · Wallets and hashing</p>
-          <h1>Homework 2</h1>
+          <p class="eyebrow">Homework 1 - Exercise 2 · Wallets and hashing</p>
+          <h1>Homework 1 - Exercise 2</h1>
           <h2>From Wallet Seed to Ethereum Address: Hashing, Key Derivation and Cryptographic Primitives</h2>
           <p class="homework-date"><i class="fa-regular fa-calendar" aria-hidden="true"></i><time datetime="2026-10-13">13/10/2026</time></p>
         </header>
@@ -157,7 +157,7 @@
           <p>Following the pipeline step by step shows that a wallet is not one algorithm but a chain of small, independent tools. The only real secret is the 128 bits of entropy created at the start: everything after it is computed deterministically, so the same 12 words always give the same keys and addresses, in my implementation as in any standard wallet. No single algorithm could do every job, because the jobs require opposite properties:</p>
           <ul>
             <li><strong>BIP-39 / BIP-32 / BIP-44 — key management and derivation.</strong> One backup that a person can write on paper must produce many keys, in the same way on every wallet. BIP-39 turns the entropy into words people can copy and into a seed, using PBKDF2 with 2048 rounds to make guessing passphrases slower. BIP-32 grows a whole tree of keys from that seed, and BIP-44 fixes where Ethereum accounts live in the tree (m/44'/60'/0'/0/i), so that different wallets find the same addresses. The hardened steps (') make sure that a leaked child key does not expose the keys above it.</li>
-            <li><strong>secp256k1 — the public/private key relationship and signatures.</strong> Here we need a one-way function <em>with</em> algebraic structure: the owner of the private key can sign a transaction and anyone can verify the signature with the public key, without learning the private key. As seen in Homework 1, this structure is exactly what a hash function must not have.</li>
+            <li><strong>secp256k1 — the public/private key relationship and signatures.</strong> Here we need a one-way function <em>with</em> algebraic structure: the owner of the private key can sign a transaction and anyone can verify the signature with the public key, without learning the private key. As seen in Exercise 1, this structure is exactly what a hash function must not have.</li>
             <li><strong>Keccak-256 — hashing.</strong> It needs the opposite: no structure at all, uniform output and avalanche. It shortens the 64-byte public key to a 20-byte address and makes the address unrelated to the key, so nothing about the key can be read from it.</li>
             <li><strong>EIP-55 — checksum and error detection.</strong> A cheap way to catch typos when an address is copied by hand, hidden in the capital letters so that old lowercase addresses remain valid. It adds no security against an attacker, who can always compute the correct capitals.</li>
           </ul>

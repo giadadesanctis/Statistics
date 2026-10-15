@@ -1,6 +1,7 @@
 window.homeworkData = [
   {
     number: '02',
+    label: 'Homework 1 - Exercise 2',
     title: 'From Wallet Seed to Ethereum Address',
     date: '2026-10-13',
     file: './homework/hw2/index.html',
@@ -10,6 +11,7 @@ window.homeworkData = [
   },
   {
     number: '01',
+    label: 'Homework 1 - Exercise 1',
     title: 'Public-Key Cryptography: From Private Key to Public Key',
     date: '2026-10-10',
     file: './homework/hw1/index.html',
