@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Homework 2: encryption with a toy EC-ElGamal scheme on secp256k1 and with the Caesar cipher, statistical cryptanalysis of Caesar on an English corpus, and an attack on the restricted private-key space.">
+  <meta name="theme-color" content="#fbfcfa">
+  <title>Statistics in Cybersecurity</title>
+  <link rel="icon" type="image/png" href="../../images/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="../../css/theme.css">
+  <link rel="stylesheet" href="../../css/base.css">
+  <link rel="stylesheet" href="../../css/layout.css">
+  <link rel="stylesheet" href="../../css/components.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"></script>
+  <script defer src="../../js/homework-data.js"></script>
+  <script defer src="../../js/render.js"></script>
+  <script defer src="../../js/main.js"></script>
+  <script defer src="./corpus.js"></script>
+  <script defer src="./ec-elgamal.js"></script>
+  <script defer src="./caesar.js"></script>
+  <script defer src="./hw2_1.js"></script>
+</head>
+<body>
+  <div class="site-shell">
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="../../index.html" aria-label="Statistics in Cybersecurity home">
+          <i class="fa-solid fa-book-open brand-icon" aria-hidden="true"></i>
+          <span>Giada De Sanctis 2046739</span>
+        </a>
+        <div class="header-actions">
+          <nav class="site-nav" id="primary-navigation" data-site-nav aria-label="Primary navigation">
+            <ul class="nav-links">
+              <li><a class="nav-link" data-nav-section="home" href="../../index.html"><i class="fa-solid fa-house nav-icon" aria-hidden="true"></i>Home</a></li>
+              <li><a class="nav-link" data-nav-section="homework" href="../../homework.html"><i class="fa-solid fa-book-open nav-icon" aria-hidden="true"></i>Homework</a></li>
+              <li><a class="nav-link" data-nav-section="about" href="../../about.html"><i class="fa-solid fa-user nav-icon" aria-hidden="true"></i>About</a></li>
+            </ul>
+          </nav>
+          <button class="menu-toggle" type="button" data-menu-toggle aria-label="Open navigation menu" aria-controls="primary-navigation" aria-expanded="false">
+            <span aria-hidden="true">☰</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <article class="post-content container reading-width reading-width--roomy" data-render-math>
+        <header class="post-header">
+          <p class="eyebrow">Homework 2 · Encryption and cryptanalysis</p>
+          <h1>Homework 2</h1>
+          <h2>Elliptic Curves vs the Caesar Cipher: Encryption, Statistical Cryptanalysis and Small Key Spaces</h2>
+          <p class="homework-date"><i class="fa-regular fa-calendar" aria-hidden="true"></i><time datetime="2026-10-21">21/10/2026</time></p>
+        </header>
+
+        <!-- ============================================================ part 1: EC -->
+        <section class="hw-card" aria-labelledby="ec-heading">
+          <h3 id="ec-heading">Part 1 — Encrypting with the toy elliptic-curve scheme</h3>
+          <p>In Homework 1 the private key $k$ gave the public key $Q = kG$. Here the same pair is used to <strong>encrypt</strong> with the <strong>EC-ElGamal</strong> scheme on the real curve secp256k1, $y^2 = x^3 + 7 \pmod p$ with $p \approx 2^{256}$ and a base point $G$ of prime order $n$. The only toy feature is the private key, drawn from $1 \le k \le 2^{b}$ with $b = 20$ instead of $1 \le k &lt; n$.</p>
+          <ol>
+            <li><strong>Key generation (receiver).</strong> Choose the private key $k$ at random and publish $Q = kG$.</li>
+            <li><strong>Encoding.</strong> ElGamal encrypts points, not text: each 30-byte block $m$ of the message becomes a point $M = (x, y)$ with $x = 256\,m + j$, for the first $j$ that puts $x$ on the curve (Koblitz's method).</li>
+            <li><strong>Encryption (sender).</strong> For every block, choose a fresh random <em>ephemeral key</em> $r$ and send
+              <div class="formula-block">$$C_1 = rG, \qquad C_2 = M + rQ$$</div></li>
+            <li><strong>Decryption (receiver).</strong> Compute the shared point and subtract it:
+              <div class="formula-block">$$S = kC_1 = k(rG) = r(kG) = rQ, \qquad M = C_2 - S$$</div>
+              then read $m = \lfloor x / 256 \rfloor$ and turn it back into bytes.</li>
+          </ol>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th scope="col">Key</th><th scope="col">Who knows it</th><th scope="col">Role</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">$G$, the curve</th><td>Everyone</td><td>Public parameters shared by all users of secp256k1.</td></tr>
+                <tr><th scope="row">Public key $Q = kG$</th><td>Everyone</td><td>Lets anyone encrypt for the receiver.</td></tr>
+                <tr><th scope="row">Private key $k$</th><td>The receiver only</td><td>The only way to compute $kC_1 = rQ$ and remove the mask. Recovering it from $Q$ is the discrete-logarithm problem.</td></tr>
+                <tr><th scope="row">Ephemeral key $r$</th><td>The sender, then nobody</td><td>Makes each encryption random: the same message gives a different ciphertext every time. It must be secret, unpredictable and never reused.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <form class="lab-controls" data-ec-form>
+            <label class="lab-grow">Message <input type="text" name="message" spellcheck="false" autocomplete="off" value="Meet me at the old library at noon. Bring the notebook!"></label>
+            <button class="lab-button" type="submit">Encrypt</button>
+          </form>
+          <div data-ec-output aria-live="polite"></div>
+        </section>
+
+        <!-- ============================================================ part 2: Caesar -->
+        <section class="hw-card" aria-labelledby="caesar-heading">
+          <h3 id="caesar-heading">Part 2 — The Caesar cipher</h3>
+          <p>Number the letters $a = 0, \dots, z = 25$. The key is a shift $s \in \{0, \dots, 25\}$ and every letter is moved by the same amount:</p>
+          <div class="formula-block">$$c = (p + s) \bmod 26, \qquad p = (c - s) \bmod 26$$</div>
+          <p>It is a <strong>symmetric</strong> cipher: the same secret key encrypts and decrypts. Spaces and punctuation are left unchanged. The message is the same as in Part 1.</p>
+          <form class="lab-controls" data-caesar-form>
+            <label class="lab-grow">Message <input type="text" name="message" spellcheck="false" autocomplete="off" value="Meet me at the old library at noon. Bring the notebook!"></label>
+            <label><span>Key <em>s</em></span> <input type="number" name="key" min="0" max="25" value="3"></label>
+            <button class="lab-button" type="submit">Encrypt</button>
+          </form>
+          <div data-caesar-output aria-live="polite"></div>
+        </section>
+
+        <!-- ============================================================ comparison -->
+        <section class="hw-card" aria-labelledby="compare-heading" data-compare>
+          <h3 id="compare-heading">Comparing the two schemes</h3>
+          <p>The two ciphers are more alike than they seem: both <strong>add a secret mask in a group and subtract it to decrypt</strong>. Caesar adds the number $s$ in $\mathbb{Z}_{26}$; EC-ElGamal adds the point $rQ$ on the curve. The difference is that Caesar adds the <em>same</em> mask to every letter, while EC-ElGamal adds a <em>new</em>, unpredictable mask to every block, and only the owner of $k$ can rebuild it.</p>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th scope="col"></th><th scope="col">Caesar cipher</th><th scope="col">Toy EC-ElGamal on secp256k1</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Type</th><td>Symmetric: one shared key</td><td>Asymmetric: public key to encrypt, private key to decrypt</td></tr>
+                <tr><th scope="row">Encryption</th><td>$c = p + s \bmod 26$, letter by letter</td><td>$C_1 = rG$, $C_2 = M + rQ$, block by block</td></tr>
+                <tr><th scope="row">Decryption</th><td>$p = c - s \bmod 26$, the same key</td><td>$M = C_2 - kC_1$, a different key</td></tr>
+                <tr><th scope="row">Key space</th><td>26 keys (25 useful): about $2^{4.7}$</td><td>$2^{b}$ in the toy, about $2^{256}$ on the real curve</td></tr>
+                <tr><th scope="row">Same message twice</th><td>Same ciphertext (deterministic)</td><td>Different ciphertext (randomized by $r$)</td></tr>
+                <tr><th scope="row">What the ciphertext reveals</th><td>Letter frequencies (shifted), word lengths, spaces, punctuation</td><td>Only the number of blocks, so the approximate length</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h4>Statistical properties of the ciphertext</h4>
+          <p>The same 600-letter passage of English, encrypted with both schemes:</p>
+          <div class="chart-grid">
+            <figure class="chart"><figcaption><strong>Caesar ciphertext: letter frequencies</strong>The shape of English, moved by the key</figcaption><div data-chart="caesar-letters"></div></figure>
+            <figure class="chart"><figcaption><strong>EC-ElGamal ciphertext: hex digits</strong>Digits of the x coordinates of C1 and C2</figcaption><div data-chart="ec-digits"></div></figure>
+          </div>
+          <p>Caesar is a <strong>permutation of the alphabet</strong>, so the letter histogram keeps its exact shape: the peaks of E, T, A, O are still there, only under different letters. The EC-ElGamal ciphertext is a pair of essentially random curve points, and its digits are flat around 1/16: the plaintext statistics do not survive encryption.</p>
+        </section>
+
+        <!-- ============================================================ cryptanalysis -->
+        <section class="hw-card" aria-labelledby="crack-heading">
+          <h3 id="crack-heading">Statistical cryptanalysis of the Caesar cipher</h3>
+          <p><strong>The corpus.</strong> The model of English is learned from a reference corpus, the opening chapters of <em>Pride and Prejudice</em> (Jane Austen, 1813, public domain from Project Gutenberg). Test messages come from a <em>different</em> book, <em>The Adventures of Sherlock Holmes</em> (Arthur Conan Doyle, 1892), so the attack is never tested on the text it learned from.</p>
+
+          <h4>The algorithm</h4>
+          <p>With only 26 keys, the attacker tries every key and keeps the decryption that is most likely under the model learned from the corpus. Three ways to score it:</p>
+          <ul>
+            <li><strong>Exhaustive search + dictionary.</strong> Decrypt with all 26 keys and keep the one whose words are most often among the 300 most common words of the corpus.</li>
+            <li><strong>Chi-squared (letter frequencies).</strong> For each key $s$, compare the letter counts $O_i(s)$ of the decryption with the counts expected from the corpus frequencies $p_i$, for a text of $N$ letters, and keep the key with the smallest distance:
+              <div class="formula-block">$$\chi^2(s) = \sum_{i=0}^{25} \frac{\left(O_i(s) - N p_i\right)^2}{N p_i}$$</div></li>
+            <li><strong>Bigram scoring (n-grams with n = 2).</strong> Use the probability of each letter <em>given the previous one</em>, estimated from the corpus with a word-boundary symbol and add-one smoothing, and keep the key with the highest log-likelihood:
+              <div class="formula-block">$$\ell(s) = \sum_{i} \log P\left(t_i \mid t_{i-1}\right), \qquad t = \text{decryption with key } s$$</div>
+              Pairs such as "th", "he", "in" are common, "qz" or "xj" almost never occur, so this score uses the order of the letters and not only their counts.</li>
+          </ul>
+        </section>
+
+        <!-- ============================================================ experiment -->
+        <section class="hw-card" aria-labelledby="experiment-heading" data-experiment>
+          <h3 id="experiment-heading">How much ciphertext is needed?</h3>
+          <p>For each length, 500 random passages of the test book are encrypted with a random key from 1 to 25, and each method tries to recover it. The curve is the share of keys recovered exactly.</p>
+          <figure class="chart chart--full"><figcaption><strong>Share of keys recovered, by ciphertext length</strong>500 random passages per length; x axis not to scale</figcaption><div class="chart-legend" data-legend></div><div data-chart="success"></div></figure>
+
+          <h4>Effectiveness and limitations</h4>
+          <ul>
+            <li><strong>Long ciphertexts are always broken.</strong> From about 50 letters the chi-squared and bigram attacks recover the key every time: the observed frequencies converge to the true ones (law of large numbers).</li>
+            <li><strong>Short ciphertexts are the hard case.</strong> With 5–10 letters the sample is too small to estimate 26 frequencies and chi-squared often fails. Bigrams do much better, because they also use which letters follow each other.</li>
+            <li><strong>The model must match the text.</strong> The attack assumes English: a text in another language or with unusual frequencies can point to a wrong key, and a very short message can have several equally plausible decryptions.</li>
+          </ul>
+
+          <h4>Comparing the approaches</h4>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th scope="col">Approach</th><th scope="col">What it uses</th><th scope="col">Cost</th><th scope="col">Strength</th><th scope="col">Weakness</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Exhaustive key search</th><td>All 26 decryptions + a judge (a person or a dictionary)</td><td>26 decryptions</td><td>Certain to contain the answer</td><td>Needs a way to recognize English; a dictionary needs word boundaries</td></tr>
+                <tr><th scope="row">Letter frequencies (chi-squared)</th><td>Unigram distribution of the corpus</td><td>26 sums of 26 terms</td><td>Robust, works without spaces, also against general substitution ciphers</td><td>Needs a few dozen letters</td></tr>
+                <tr><th scope="row">n-gram scoring (bigrams)</th><td>Pairs of consecutive letters</td><td>26 sums over the text</td><td>Best on short texts</td><td>Needs a larger corpus to estimate $27^2$ probabilities</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ============================================================ attack on EC -->
+        <section class="hw-card" aria-labelledby="attack-heading" data-attack>
+          <h3 id="attack-heading">Attacking the toy scheme: the restricted key space</h3>
+          <p>The EC-ElGamal ciphertext gives no statistics to exploit, but the toy private key satisfies $1 \le k \le 2^{b}$. The attacker only needs the public key: find $k$ such that $kG = Q$, then decrypt exactly like the receiver, $M = C_2 - kC_1$. Two algorithms:</p>
+          <ul>
+            <li><strong>Brute force.</strong> Compute $G, 2G, 3G, \dots$ with one point addition each and compare with $Q$. On average $2^{b-1}$ additions, with no memory.</li>
+            <li><strong>Baby-step giant-step (BSGS).</strong> Write $k = im + j$ with $m = \lceil \sqrt{2^{b}} \rceil$. Store the <em>baby steps</em> $jG$ for $0 \le j &lt; m$ in a table, then take <em>giant steps</em> $Q - i(mG)$ for $i = 0, 1, \dots$ until one is in the table: then $Q - imG = jG$, so $k = im + j$. About $2\sqrt{2^{b}} = 2^{b/2 + 1}$ additions, but $2^{b/2}$ points of memory.</li>
+          </ul>
+          <div data-attack-target></div>
+          <div class="lab-controls">
+            <button class="lab-button" type="button" data-method="brute"><i class="fa-solid fa-hammer" aria-hidden="true"></i>Brute force</button>
+            <button class="lab-button" type="button" data-method="bsgs"><i class="fa-solid fa-shoe-prints" aria-hidden="true"></i>Baby-step giant-step</button>
+          </div>
+          <div class="lab-stack">
+            <div class="stat-row" data-tiles="attack"></div>
+            <div data-attack-output aria-live="polite"></div>
+          </div>
+
+          <h4>Why this would not work on real ECC</h4>
+          <p>Both algorithms are <strong>generic</strong>: their cost grows with the size of the key space, $2^{b}$ for brute force and $2^{b/2}$ for BSGS. On a properly configured secp256k1 the private key is uniform in $1 \le k &lt; n \approx 2^{256}$: brute force needs about $2^{255}$ additions, and the best known attack, <strong>Pollard's rho</strong>, still about $2^{128}$, far out of reach. The toy is broken not because the curve is weak, but because $b$ is small.</p>
+
+          <h4>Two attacks, two kinds of weakness</h4>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th scope="col"></th><th scope="col">Statistical attack on Caesar</th><th scope="col">Key-space attack on the toy EC scheme</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">What it exploits</th><td>The redundancy of English, which survives encryption</td><td>The small number of possible private keys</td></tr>
+                <tr><th scope="row">What it needs</th><td>Enough ciphertext and a corpus of the language</td><td>Only the public key; no ciphertext and no knowledge of the language</td></tr>
+                <tr><th scope="row">How the key is recognized</th><td>The most <em>plausible</em> decryption: it can be wrong on short texts</td><td>An exact test, $kG = Q$: the answer is certain</td></tr>
+                <tr><th scope="row">Cost</th><td>26 scores, instantaneous</td><td>$2^{b}$ or $2^{b/2}$ additions, exponential in the key length</td></tr>
+                <tr><th scope="row">Fixed by a larger key space?</th><td>No: a substitution cipher with $2^{88}$ keys falls to the same statistics</td><td>Yes: with $k$ uniform up to $2^{256}$ the attack is infeasible</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h4>Other attacks, and where the weaknesses come from</h4>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th scope="col">Attack</th><th scope="col">Idea</th><th scope="col">Weakness it exploits</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Pollard's kangaroo (lambda)</th><td>Finds a logarithm known to lie in an interval of width $w$ in about $2\sqrt{w}$ steps with constant memory</td><td>Restricted key space</td></tr>
+                <tr><th scope="row">Precomputed table, many users</th><td>Compute the $2^{b}$ public keys once; afterwards every user's key is a table lookup</td><td>Restricted key space</td></tr>
+                <tr><th scope="row">Weak or reused ephemeral key</th><td>If $r$ is small or predictable, $S = rQ$ is computed from $C_1$ without $k$. If the same $r$ is used twice, $C_2 - C_2' = M - M'$, and one known message reveals the other</td><td>Design and implementation (my code uses a fresh $r$ from <code>crypto.getRandomValues</code> over the full range)</td></tr>
+                <tr><th scope="row">Malleability</th><td>$(C_1, C_2 + T)$ decrypts to $M + T$: an attacker can change the message without detection</td><td>Design: no integrity check</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Only the first two rows come from the restricted key space; the others come from the toy design and would remain even with a full 256-bit key.</p>
+        </section>
+
+        <!-- ============================================================ conclusion -->
+        <section class="hw-card" aria-labelledby="conclusion-heading">
+          <h3 id="conclusion-heading">Conclusion</h3>
+          <p>Both schemes encrypt by adding a secret mask in a group, but they fail in opposite ways:</p>
+          <ul>
+            <li><strong>Caesar is broken by statistics.</strong> It maps each letter to one fixed letter, so the frequencies of English pass straight into the ciphertext. With a corpus to learn them, chi-squared recovers the key from a few dozen letters, and bigram scoring from fewer than ten. Its 26 keys make it worse, but they are not the main problem: a cipher with $2^{88}$ keys built in the same way falls to the same analysis.</li>
+            <li><strong>The toy EC scheme is broken by its key space.</strong> Its ciphertext is randomized and statistically flat, so frequency analysis has nothing to work on. But with $k \le 2^{20}$ brute force finds the key in seconds, and baby-step giant-step in a fraction of a second, using only the public key.</li>
+            <li><strong>Real ECC removes the shortcut.</strong> With a private key uniform in $[1, n)$, $n \approx 2^{256}$, the best generic attacks need about $2^{128}$ operations, which is out of reach. What remains to get right is the design: fresh random ephemeral keys, point validation and authenticated encryption, as in ECIES.</li>
+          </ul>
+          <p>A good cipher needs both properties at once: a ciphertext with no visible statistics, and a key space too large to search.</p>
+        </section>
+      </article>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <p class="footer-title">Statistics in Cybersecurity</p>
+        <nav class="footer-nav" aria-label="Footer navigation">
+          <a href="../../index.html"><i class="fa-solid fa-house" aria-hidden="true"></i>Home</a>
+          <a href="../../homework.html"><i class="fa-solid fa-book-open" aria-hidden="true"></i>Homework</a>
+          <a href="../../about.html"><i class="fa-solid fa-user" aria-hidden="true"></i>About</a>
+        </nav>
+        <div class="footer-contact">
+          <a href="mailto:desanctis.2046739@studenti.uniroma1.it"><i class="fa-regular fa-envelope" aria-hidden="true"></i>desanctis.2046739@studenti.uniroma1.it</a>
+          <p><i class="fa-solid fa-id-card" aria-hidden="true"></i>Matricola 2046739</p>
+        </div>
+        <p class="footer-copyright">© <span data-current-year></span> Giada De Sanctis</p>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

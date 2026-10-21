@@ -1,8 +1,18 @@
 window.homeworkData = [
   {
+    number: '03',
+    label: 'Homework 2',
+    title: 'Elliptic Curves vs the Caesar Cipher: Encryption, Statistical Cryptanalysis and Small Key Spaces',
+    date: '2026-10-21',
+    file: './homework/hw2_1/index.html',
+    tags: ['Encryption', 'Cryptanalysis', 'Statistics'],
+    description: 'The same message encrypted and decrypted with a toy EC-ElGamal scheme on secp256k1 and with the Caesar cipher, comparing their procedures, key spaces and ciphertext statistics. The Caesar key is recovered from the letter statistics of an English corpus (exhaustive search, chi-squared and bigram scoring, tested on ciphertexts of different lengths), while the toy elliptic-curve key, restricted to 2²⁰ values, falls to brute force and baby-step giant-step.',
+    status: 'Submitted'
+  },
+  {
     number: '02',
     label: 'Homework 1 - Exercise 2',
-    title: 'From Wallet Seed to Ethereum Address',
+    title: 'From Wallet Seed to Ethereum Address: Hashing, Key Derivation and Cryptographic Primitives',
     date: '2026-10-13',
     file: './homework/hw2/index.html',
     tags: ['Hashing', 'Key derivation', 'Statistics'],
@@ -12,7 +22,7 @@ window.homeworkData = [
   {
     number: '01',
     label: 'Homework 1 - Exercise 1',
-    title: 'Public-Key Cryptography: From Private Key to Public Key',
+    title: 'Public-Key Cryptography: From Private Key to Public Key in Ethereum',
     date: '2026-10-10',
     file: './homework/hw1/index.html',
     tags: ['Elliptic curves', 'Cryptography', 'Statistics'],

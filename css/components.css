@@ -457,6 +457,7 @@
 /* Homework page sections */
 .hw-card {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
   margin-block: 2rem;
   padding: clamp(1.25rem, 3vw, 2.25rem);
@@ -1083,6 +1084,141 @@
   cursor: pointer;
   font-size: var(--text-sm);
   font-weight: 600;
+}
+
+/* Homework 2: highlighted bar, line charts, legend */
+.chart-bar--muted {
+  fill: var(--color-sidebar-neon);
+}
+
+.chart-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.chart-dot {
+  stroke: var(--color-surface);
+  stroke-width: 2;
+}
+
+.chart-crosshair {
+  stroke: #8a8a8a;
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.chart-end-label {
+  fill: var(--color-text);
+  font-size: 11px;
+}
+
+.chart-annotation {
+  fill: var(--color-heading);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.lab-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.lab-stack:empty,
+.lab-stack > :empty {
+  display: none;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  margin-bottom: 0.35rem;
+  color: var(--color-text);
+  font-size: var(--text-xs);
+}
+
+.chart-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.chart-swatch {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+/* Homework 2: Caesar substitution table and long text inputs */
+.alphabet-map {
+  display: grid;
+  grid-template-columns: auto repeat(26, minmax(0, 1fr));
+  overflow-x: auto;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-align: center;
+}
+
+.alphabet-map span {
+  min-width: 1.1rem;
+  padding: 0.3rem 0;
+}
+
+.alphabet-map span:nth-child(-n + 27) {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.alphabet-map span:nth-child(n + 28) {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.alphabet-map .alphabet-label {
+  padding-inline: 0.6rem;
+  color: var(--color-muted);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  text-align: left;
+}
+
+.lab-controls textarea {
+  width: 100%;
+  min-height: 5.5rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 400;
+  resize: vertical;
+}
+
+.lab-controls .lab-check {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 34px;
+}
+
+.lab-controls .lab-check input {
+  accent-color: var(--color-accent);
+}
+
+.post-content .plain-output {
+  margin: 0.75rem 0 0;
+  padding: 0.75rem 1rem;
+  border-left: 2px solid var(--color-accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--color-subtle);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 767px) {
