@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Homework 3: the penetration of n systems by m attackers modelled as a random walk with Bernoulli or Rademacher increments; simulated distributions of the total, average and normalized score, the Law of Large Numbers and the Central Limit Theorem.">
+  <meta name="theme-color" content="#fbfcfa">
+  <title>Statistics in Cybersecurity</title>
+  <link rel="icon" type="image/png" href="../../images/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="../../css/theme.css">
+  <link rel="stylesheet" href="../../css/base.css">
+  <link rel="stylesheet" href="../../css/layout.css">
+  <link rel="stylesheet" href="../../css/components.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"></script>
+  <script defer src="../../js/homework-data.js"></script>
+  <script defer src="../../js/render.js"></script>
+  <script defer src="../../js/main.js"></script>
+  <script defer src="./random-walk.js"></script>
+  <script defer src="./hw3.js"></script>
+</head>
+<body>
+  <div class="site-shell">
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="../../index.html" aria-label="Statistics in Cybersecurity home">
+          <i class="fa-solid fa-book-open brand-icon" aria-hidden="true"></i>
+          <span>Giada De Sanctis 2046739</span>
+        </a>
+        <div class="header-actions">
+          <nav class="site-nav" id="primary-navigation" data-site-nav aria-label="Primary navigation">
+            <ul class="nav-links">
+              <li><a class="nav-link" data-nav-section="home" href="../../index.html"><i class="fa-solid fa-house nav-icon" aria-hidden="true"></i>Home</a></li>
+              <li><a class="nav-link" data-nav-section="homework" href="../../homework.html"><i class="fa-solid fa-book-open nav-icon" aria-hidden="true"></i>Homework</a></li>
+              <li><a class="nav-link" data-nav-section="about" href="../../about.html"><i class="fa-solid fa-user nav-icon" aria-hidden="true"></i>About</a></li>
+            </ul>
+          </nav>
+          <button class="menu-toggle" type="button" data-menu-toggle aria-label="Open navigation menu" aria-controls="primary-navigation" aria-expanded="false">
+            <span aria-hidden="true">☰</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <article class="post-content container reading-width reading-width--roomy" data-render-math>
+        <header class="post-header">
+          <p class="eyebrow">Homework 3 · Stochastic processes</p>
+          <h1>Homework 3</h1>
+          <h2>Attackers as Random Walks: Law of Large Numbers and Central Limit Theorem</h2>
+          <p class="homework-date"><i class="fa-regular fa-calendar" aria-hidden="true"></i><time datetime="2026-10-25">25/10/2026</time></p>
+        </header>
+
+        <!-- ============================================================ model -->
+        <section class="hw-card" aria-labelledby="model-heading">
+          <h3 id="model-heading">The model</h3>
+          <p>Each of the $m$ attackers tries the $n$ systems one after the other. The score obtained on system $i$ is $X_i$, and the $X_i$ are i.i.d. The score after $k$ systems, $S_k = X_1 + \dots + X_k$, is a <strong>random walk</strong>: every attacker is one trajectory of it.</p>
+          <ul>
+            <li><strong>Bernoulli model:</strong> $X_i \in \{0, 1\}$ with $P(X_i = 1) = p$. Each system is either penetrated (1) or not (0), and $S_n$ counts the penetrated systems.</li>
+            <li><strong>Rademacher model:</strong> $X_i = \pm 1$ with probability $1/2$ each. The attacker gains or loses one step of penetration: the symmetric, zero-mean case.</li>
+          </ul>
+          <p>With $\mu = E[X_i]$ and $\sigma^2 = \operatorname{Var}(X_i)$, independence gives $E[S_n] = n\mu$ and $\operatorname{Var}(S_n) = n\sigma^2$, so the three normalizations behave differently:</p>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th scope="col">Quantity</th><th scope="col">Mean</th><th scope="col">Variance</th><th scope="col">Bernoulli</th><th scope="col">Rademacher</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">$X_i$</th><td>$\mu$</td><td>$\sigma^2$</td><td>$p,\ p(1-p)$</td><td>$0,\ 1$</td></tr>
+                <tr><th scope="row">Total score $S_n$</th><td>$n\mu$</td><td>$n\sigma^2$</td><td>$np,\ np(1-p)$</td><td>$0,\ n$</td></tr>
+                <tr><th scope="row">Average score $S_n/n$</th><td>$\mu$</td><td>$\sigma^2/n$</td><td>$p,\ p(1-p)/n$</td><td>$0,\ 1/n$</td></tr>
+                <tr><th scope="row">Normalized score $S_n/\sqrt n$</th><td>$\sqrt n\,\mu$</td><td>$\sigma^2$</td><td>$\sqrt n\,p,\ p(1-p)$</td><td>$0,\ 1$</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>The variance of $S_n$ grows with $n$, that of $S_n/n$ goes to 0 and that of $S_n/\sqrt n$ stays constant.</p>
+        </section>
+
+        <!-- ============================================================ theory -->
+        <section class="hw-card" aria-labelledby="theory-heading">
+          <h3 id="theory-heading">Theoretical background</h3>
+
+          <h4>Mean, variance and exact distribution of $S_n$</h4>
+          <p>Expectation is linear, so $E[S_n] = \sum_i E[X_i] = n\mu$. For the variance, independence makes all covariances vanish:</p>
+          <div class="formula-block">$$\operatorname{Var}(S_n) = \sum_{i=1}^{n} \operatorname{Var}(X_i) + 2\sum_{i&lt;j} \operatorname{Cov}(X_i, X_j) = n\sigma^2, \qquad \operatorname{Var}(aS_n) = a^2\operatorname{Var}(S_n)$$</div>
+          <p>Dividing by $n$ multiplies the variance by $1/n^2$, dividing by $\sqrt n$ by $1/n$: this gives the three rows of the table above. The exact distribution is also known:</p>
+          <ul>
+            <li><strong>Bernoulli:</strong> $S_n$ counts successes in $n$ independent trials, so $S_n \sim \operatorname{Bin}(n, p)$ and $P(S_n = k) = \binom{n}{k} p^k (1-p)^{n-k}$ for $k = 0, \dots, n$.</li>
+            <li><strong>Rademacher:</strong> writing $X_i = 2B_i - 1$ with $B_i \sim \operatorname{Bernoulli}(1/2)$ gives $S_n = 2B - n$ with $B \sim \operatorname{Bin}(n, 1/2)$, so $P(S_n = 2k - n) = \binom{n}{k} 2^{-n}$. $S_n$ takes only values with the parity of $n$, spaced by 2. This is the <strong>simple symmetric random walk</strong>: it has no drift, returns to 0 infinitely often (it is recurrent), and its typical distance from 0 is $E|S_n| \approx \sqrt{2n/\pi}$.</li>
+          </ul>
+
+          <h4>Two modes of convergence</h4>
+          <ul>
+            <li><strong>In probability:</strong> $Y_n \xrightarrow{P} c$ if $P(|Y_n - c| \ge \varepsilon) \to 0$ for every $\varepsilon &gt; 0$: the values themselves concentrate around $c$.</li>
+            <li><strong>In distribution:</strong> $Y_n \xrightarrow{d} Y$ if $P(Y_n \le x) \to P(Y \le x)$ at every continuity point of $Y$: only the shape of the distribution converges, not the values. This is weaker, and it is the right notion for $S_n/\sqrt n$, which never settles on a single value.</li>
+          </ul>
+
+          <h4>Law of Large Numbers</h4>
+          <p>Chebyshev's inequality, $P(|Y - E[Y]| \ge \varepsilon) \le \operatorname{Var}(Y)/\varepsilon^2$, applied to $Y = S_n/n$ proves the weak law directly:</p>
+          <div class="formula-block">$$P\left(\left|\frac{S_n}{n} - \mu\right| \ge \varepsilon\right) \le \frac{\sigma^2}{n\varepsilon^2} \xrightarrow[n\to\infty]{} 0 \quad\Longrightarrow\quad \frac{S_n}{n} \xrightarrow{P} \mu$$</div>
+          <p>The bound is crude but explicit; the strong law adds that $S_n/n \to \mu$ with probability 1 along each single trajectory, which is what the trajectory chart of $S_k/k$ shows.</p>
+
+          <h4>Central Limit Theorem</h4>
+          <p>For i.i.d. increments with finite variance,</p>
+          <div class="formula-block">$$Z_n = \frac{S_n - n\mu}{\sigma\sqrt n} \xrightarrow{d} N(0, 1), \qquad P(Z_n \le x) \to \Phi(x) = \int_{-\infty}^{x} \frac{e^{-t^2/2}}{\sqrt{2\pi}}\,dt$$</div>
+          <p>For Bernoulli increments this is the de Moivre–Laplace theorem, the normal approximation of the binomial. For Rademacher increments $\mu = 0$, $\sigma = 1$, so $Z_n = S_n/\sqrt n$ itself tends to $N(0,1)$. In the Bernoulli case $S_n/\sqrt n = Z_n\sigma + \sqrt n\,p$ drifts to infinity, and only the centered version has a limit. The speed is given by the <strong>Berry–Esseen</strong> bound, with $\rho = E|X_i - \mu|^3$:</p>
+          <div class="formula-block">$$\sup_x \left|P(Z_n \le x) - \Phi(x)\right| \le \frac{C\rho}{\sigma^3\sqrt n}, \qquad C \le 0.4748$$</div>
+          <p>For Rademacher $\rho = \sigma = 1$, so the distance is at most $0.475/\sqrt n$. For Bernoulli $\rho = p(1-p)\left(p^2 + (1-p)^2\right)$, and the bound gets worse when $p$ is close to 0 or 1, because the binomial is then very skewed.</p>
+
+          <h4>Why $\sqrt n$</h4>
+          <p>The fluctuations of $S_n$ around $n\mu$ have size $\sigma\sqrt n$. Dividing by a faster rate, such as $n$, crushes them to 0, which is the LLN. Dividing by a slower rate, or not at all, lets them blow up. Only $\sqrt n$ keeps them of order 1, and the CLT says that at this scale their shape is always Gaussian, whatever the distribution of the $X_i$.</p>
+        </section>
+
+        <!-- ============================================================ simulation -->
+        <section class="hw-card" aria-labelledby="sim-heading" data-sim>
+          <h3 id="sim-heading">Simulation</h3>
+          <p>Every attacker walks through $n = 10{,}000$ systems; the scores at $n = 10, 100, 1000, 10{,}000$ are read from the same trajectories. The charts show 20 of the $m$ trajectories; the gray lines are $E \pm 2\sqrt{\operatorname{Var}}$.</p>
+          <form class="lab-controls" data-sim-form>
+            <label>Model <select name="model">
+              <option value="rademacher" selected>Rademacher (±1)</option>
+              <option value="bernoulli">Bernoulli (0/1)</option>
+            </select></label>
+            <label><span>p (Bernoulli)</span> <input type="number" name="p" min="0.01" max="0.99" step="0.01" value="0.3"></label>
+            <label>Attackers m <select name="m">
+              <option value="10">10</option>
+              <option value="100">100</option>
+              <option value="1000" selected>1,000</option>
+              <option value="5000">5,000</option>
+            </select></label>
+            <button class="lab-button" type="submit"><i class="fa-solid fa-play" aria-hidden="true"></i>Simulate</button>
+          </form>
+          <div class="chart-grid">
+            <figure class="chart chart--full"><figcaption><strong>Total score $S_k$</strong>The band widens like $\sqrt k$ around $k\mu$</figcaption><div data-chart="traj-total"></div></figure>
+            <figure class="chart"><figcaption><strong>Average score $S_k/k$</strong>The band shrinks like $1/\sqrt k$ around $\mu$</figcaption><div data-chart="traj-average"></div></figure>
+            <figure class="chart"><figcaption><strong>Normalized score $S_k/\sqrt k$</strong>The band keeps a constant width</figcaption><div data-chart="traj-normalized"></div></figure>
+          </div>
+
+          <h4>Distributions across the $m$ attackers</h4>
+          <div class="lab-controls">
+            <label>Number of systems n <select name="n" data-n>
+              <option value="10">10</option>
+              <option value="100">100</option>
+              <option value="1000" selected>1,000</option>
+              <option value="10000">10,000</option>
+            </select></label>
+          </div>
+          <div class="chart-grid">
+            <figure class="chart chart--full"><figcaption><strong>Total score $S_n$</strong>Histogram of the $m$ attackers</figcaption><div data-chart="hist-total"></div></figure>
+            <figure class="chart"><figcaption><strong>Average score $S_n/n$</strong>Same axis for every $n$: the mass concentrates at $\mu$</figcaption><div data-chart="hist-average"></div></figure>
+            <figure class="chart"><figcaption><strong>Normalized score $S_n/\sqrt n$</strong>Gray line: the normal density of the CLT</figcaption><div data-chart="hist-normalized"></div></figure>
+          </div>
+
+          <h4>Convergence as $n$ grows</h4>
+          <div data-table></div>
+          <ul>
+            <li><strong>LLN.</strong> The share of attackers whose average is more than $\varepsilon = 0.05$ away from $\mu$ falls to 0 as $n$ grows: $S_n/n$ converges in probability to $\mu$.</li>
+            <li><strong>Variance.</strong> The empirical variances follow the table above: $\operatorname{Var}(S_n)$ grows like $n$, $\operatorname{Var}(S_n/n)$ falls like $1/n$, $\operatorname{Var}(S_n/\sqrt n)$ stays at $\sigma^2$. Dividing by $\sqrt n$ is the only scaling that gives a non-trivial limit.</li>
+            <li><strong>CLT.</strong> The Kolmogorov–Smirnov distance $\sup_x |F_n(x) - \Phi(x)|$ between the empirical distribution of the standardized score and $N(0,1)$ decreases with $n$; in the Rademacher case the histogram of $S_n/\sqrt n$ lies on the standard normal density. At small $n$ the distance stays large because $S_n$ only takes a few values; the floor of about $1/\sqrt m$ is the sampling error of $m$ attackers.</li>
+          </ul>
+        </section>
+
+        <!-- ============================================================ interpretation -->
+        <section class="hw-card" aria-labelledby="interp-heading" data-interp>
+          <h3 id="interp-heading">Interpretation: $n$ systems and $m$ attackers</h3>
+          <div class="stat-row" data-tiles></div>
+          <ul>
+            <li><strong>System size $n$.</strong> In the Bernoulli model an attacker compromises about $np$ systems, with an uncertainty of only $\sqrt{np(1-p)}$: in a large infrastructure the <em>fraction</em> of compromised systems is predictable ($\approx p$) even though the count keeps growing. In the Rademacher model there is no drift: the score of each attacker wanders around 0 with excursions of order $\sqrt n$, so a larger system allows deeper, but not systematic, penetration.</li>
+            <li><strong>Number of attackers $m$.</strong> Adding attackers does not change the distribution of one trajectory; it gives more samples of it. Histograms and estimates become more accurate (standard error $\propto 1/\sqrt m$), and the <strong>best attacker</strong> goes further: the maximum of $m$ scores is about $n\mu + \sigma\sqrt n\,\sqrt{2\ln m}$.</li>
+            <li><strong>Aggregate score.</strong> The total of all attackers, $T = \sum_{j=1}^{m} S_n^{(j)}$, is a sum of $mn$ independent steps: $E[T] = mn\mu$ and $\operatorname{sd}(T) = \sigma\sqrt{mn}$. It grows linearly in both $n$ and $m$, while its relative fluctuation shrinks like $1/\sqrt{mn}$; in the symmetric case the aggregate stays near 0.</li>
+          </ul>
+        </section>
+
+        <!-- ============================================================ conclusion -->
+        <section class="hw-card" aria-labelledby="conclusion-heading">
+          <h3 id="conclusion-heading">Conclusion</h3>
+          <p>The same random walk looks different under the three scalings. The total score $S_n$ drifts like $n\mu$ and spreads like $\sqrt n$; the average $S_n/n$ collapses to $\mu$ (LLN), so the penetration rate of a large system is predictable; the normalized score $S_n/\sqrt n$ keeps a constant variance and, in the symmetric Rademacher case, becomes a standard normal (CLT). The number of systems sets the scale of the scores, the number of attackers sets how well their distribution is known and how far the most successful attacker gets.</p>
+        </section>
+      </article>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <p class="footer-title">Statistics in Cybersecurity</p>
+        <nav class="footer-nav" aria-label="Footer navigation">
+          <a href="../../index.html"><i class="fa-solid fa-house" aria-hidden="true"></i>Home</a>
+          <a href="../../homework.html"><i class="fa-solid fa-book-open" aria-hidden="true"></i>Homework</a>
+          <a href="../../about.html"><i class="fa-solid fa-user" aria-hidden="true"></i>About</a>
+        </nav>
+        <div class="footer-contact">
+          <a href="mailto:desanctis.2046739@studenti.uniroma1.it"><i class="fa-regular fa-envelope" aria-hidden="true"></i>desanctis.2046739@studenti.uniroma1.it</a>
+          <p><i class="fa-solid fa-id-card" aria-hidden="true"></i>Matricola 2046739</p>
+        </div>
+        <p class="footer-copyright">© <span data-current-year></span> Giada De Sanctis</p>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

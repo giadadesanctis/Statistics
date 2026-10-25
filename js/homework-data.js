@@ -1,5 +1,15 @@
 window.homeworkData = [
   {
+    number: '04',
+    label: 'Homework 3',
+    title: 'Attackers as Random Walks: Law of Large Numbers and Central Limit Theorem',
+    date: '2026-10-25',
+    file: './homework/hw3/index.html',
+    tags: ['Stochastic processes', 'Simulation', 'Statistics'],
+    description: 'The penetration of n systems by m attackers modelled as a random walk with Bernoulli or Rademacher increments. Simulated trajectories and distributions of the total score, the average score and the normalized score show the Law of Large Numbers, how the variance changes under each normalization and the convergence to the standard normal of the Central Limit Theorem, interpreted in terms of system size and number of attackers.',
+    status: 'Submitted'
+  },
+  {
     number: '03',
     label: 'Homework 2',
     title: 'Elliptic Curves vs the Caesar Cipher: Encryption, Statistical Cryptanalysis and Small Key Spaces',
