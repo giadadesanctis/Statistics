@@ -1,5 +1,15 @@
 window.homeworkData = [
   {
+    number: '05',
+    label: 'Homework 4',
+    title: "Welford's Recurrences and the Sampling Mean and Variance of Hackers' Scores",
+    date: '2026-10-30',
+    file: './homework/hw4/index.html',
+    tags: ['Online algorithms', 'Estimation', 'Statistics'],
+    description: "Derivation of Knuth's recurrence for the mean and of Welford's recurrences for the sum of squares and the variance, implemented in three lines and compared with the unstable textbook formula. Each of m hackers scores n systems with a Binomial or uniform score between 0 and 10; their Welford sampling means and variances are averaged and compared with the theoretical mean and variance, showing unbiasedness, Bessel's correction, the 1/√n shrinking of the sampling distributions and their role in confidence intervals.",
+    status: 'Submitted'
+  },
+  {
     number: '04',
     label: 'Homework 3',
     title: 'Attackers as Random Walks: Law of Large Numbers and Central Limit Theorem',

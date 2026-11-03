@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Homework 4: derivation and code of Welford's recurrence formulas for the sum of squares and the variance, and a simulation of m hackers scoring n systems that compares the average sampling mean and variance with the theoretical mean and variance.">
+  <meta name="theme-color" content="#fbfcfa">
+  <title>Statistics in Cybersecurity</title>
+  <link rel="icon" type="image/png" href="../../images/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github-dark.min.css">
+  <link rel="stylesheet" href="../../css/theme.css">
+  <link rel="stylesheet" href="../../css/base.css">
+  <link rel="stylesheet" href="../../css/layout.css">
+  <link rel="stylesheet" href="../../css/components.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+  <script defer src="../../js/homework-data.js"></script>
+  <script defer src="../../js/render.js"></script>
+  <script defer src="../../js/main.js"></script>
+  <script defer src="./welford.js"></script>
+  <script defer src="./hw4.js"></script>
+</head>
+<body>
+  <div class="site-shell">
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="../../index.html" aria-label="Statistics in Cybersecurity home">
+          <i class="fa-solid fa-book-open brand-icon" aria-hidden="true"></i>
+          <span>Giada De Sanctis 2046739</span>
+        </a>
+        <div class="header-actions">
+          <nav class="site-nav" id="primary-navigation" data-site-nav aria-label="Primary navigation">
+            <ul class="nav-links">
+              <li><a class="nav-link" data-nav-section="home" href="../../index.html"><i class="fa-solid fa-house nav-icon" aria-hidden="true"></i>Home</a></li>
+              <li><a class="nav-link" data-nav-section="homework" href="../../homework.html"><i class="fa-solid fa-book-open nav-icon" aria-hidden="true"></i>Homework</a></li>
+              <li><a class="nav-link" data-nav-section="about" href="../../about.html"><i class="fa-solid fa-user nav-icon" aria-hidden="true"></i>About</a></li>
+            </ul>
+          </nav>
+          <button class="menu-toggle" type="button" data-menu-toggle aria-label="Open navigation menu" aria-controls="primary-navigation" aria-expanded="false">
+            <span aria-hidden="true">☰</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <article class="post-content container reading-width reading-width--roomy" data-render-math>
+        <header class="post-header">
+          <p class="eyebrow">Homework 4 · Online algorithms and estimation</p>
+          <h1>Homework 4</h1>
+          <h2>Welford's Recurrences and the Sampling Mean and Variance of Hackers' Scores</h2>
+          <p class="homework-date"><i class="fa-regular fa-calendar" aria-hidden="true"></i><time datetime="2026-10-30">30/10/2026</time></p>
+        </header>
+
+        <!-- ################################################################ EXERCISE 1 -->
+        <section class="exercise" aria-labelledby="ex1-heading">
+          <p class="eyebrow">Exercise 1</p>
+          <h2 id="ex1-heading">Welford's Recurrence Formulas</h2>
+
+          <!-- ============================================================ mean -->
+          <section class="hw-card" aria-labelledby="knuth-heading">
+            <h3 id="knuth-heading">Knuth's recurrence for the mean</h3>
+            <p>Data often arrive as a <strong>stream</strong> $x_1, x_2, \dots$: log entries, packets, scores of attack attempts. We want the mean and the variance after every new value without storing the past values and without summing everything again. Let</p>
+            <div class="formula-block">$$M_k = \frac{1}{k}\sum_{i=1}^{k} x_i$$</div>
+            <p>be the mean of the first $k$ values. The sum of the first $k$ values is $kM_k$, and it is the sum of the first $k-1$ values plus the new one:</p>
+            <div class="formula-block">$$kM_k = (k-1)M_{k-1} + x_k = kM_{k-1} + (x_k - M_{k-1})$$</div>
+            <p>Dividing by $k$ gives Knuth's recurrence:</p>
+            <div class="formula-block">$$\boxed{M_k = M_{k-1} + \frac{x_k - M_{k-1}}{k}}, \qquad M_0 = 0$$</div>
+            <p>The new mean is the old mean corrected by a fraction $1/k$ of the <em>innovation</em> $x_k - M_{k-1}$, the surprise brought by the new value. Only $k$ and $M_{k-1}$ are stored, and no large sum $\sum x_i$ is ever formed. A consequence used below: since $kM_k - kM_{k-1} = x_k - M_{k-1}$,</p>
+            <div class="formula-block">$$x_k - M_k = (x_k - M_{k-1}) - (M_k - M_{k-1}) = \frac{k-1}{k}\,(x_k - M_{k-1})$$</div>
+          </section>
+
+          <!-- ============================================================ SS -->
+          <section class="hw-card" aria-labelledby="ss-heading">
+            <h3 id="ss-heading">Welford's recurrence for the sum of squares</h3>
+            <p>The sum of squared deviations from the current mean is</p>
+            <div class="formula-block">$$S_k = \sum_{i=1}^{k} (x_i - M_k)^2 = \sum_{i=1}^{k} x_i^2 - kM_k^2$$</div>
+            <p>(expand the square and use $\sum_{i\le k} x_i = kM_k$). We follow the same idea as for the mean: write $S_k$ as $S_{k-1}$ plus a correction that only involves the new value and the stored means. Subtracting the same identity at step $k-1$:</p>
+            <div class="formula-block">$$S_k - S_{k-1} = x_k^2 - kM_k^2 + (k-1)M_{k-1}^2$$</div>
+            <p>From the mean recurrence, $(k-1)M_{k-1} = kM_k - x_k$, so $(k-1)M_{k-1}^2 = (kM_k - x_k)\,M_{k-1}$ and</p>
+            <div class="formula-block">$$\begin{aligned}
+S_k - S_{k-1} &amp;= x_k^2 - x_kM_{k-1} - kM_k\,(M_k - M_{k-1}) \\
+&amp;= x_k\,(x_k - M_{k-1}) - M_k\,(x_k - M_{k-1}) &amp;&amp; \text{since } k(M_k - M_{k-1}) = x_k - M_{k-1}\\
+&amp;= (x_k - M_{k-1})(x_k - M_k)
+\end{aligned}$$</div>
+            <p>This is Welford's recurrence:</p>
+            <div class="formula-block">$$\boxed{S_k = S_{k-1} + (x_k - M_{k-1})(x_k - M_k)} = S_{k-1} + \frac{k-1}{k}\,(x_k - M_{k-1})^2, \qquad S_0 = 0$$</div>
+            <p>The increment is the product of the deviation of $x_k$ from the old mean and from the new mean. Both factors have the same sign, so $S_k$ never decreases, as a sum of squares should; it is also invariant if every $x_i$ is shifted by a constant, because only differences appear.</p>
+          </section>
+
+          <!-- ============================================================ variance -->
+          <section class="hw-card" aria-labelledby="var-heading">
+            <h3 id="var-heading">Recurrence for the variance</h3>
+            <p>The variance is the sum of squares divided by the number of degrees of freedom. The <strong>sampling variance</strong> uses $k-1$ (Bessel's correction, justified in Exercise 2), the population (or plug-in) variance uses $k$:</p>
+            <div class="formula-block">$$s_k^2 = \frac{S_k}{k-1}\ (k \ge 2), \qquad \hat\sigma_k^2 = \frac{S_k}{k}$$</div>
+            <p>Dividing Welford's recurrence by $k$ and writing $S_{k-1} = (k-1)\hat\sigma_{k-1}^2$ gives exactly the shape of Knuth's formula: the variance is a running average of the terms $(x_k - M_{k-1})(x_k - M_k)$, just as the mean is a running average of the $x_k$:</p>
+            <div class="formula-block">$$\boxed{\hat\sigma_k^2 = \hat\sigma_{k-1}^2 + \frac{(x_k - M_{k-1})(x_k - M_k) - \hat\sigma_{k-1}^2}{k}}$$</div>
+            <p>Dividing by $k-1$ instead, with the second form of the recurrence:</p>
+            <div class="formula-block">$$\boxed{s_k^2 = \frac{k-2}{k-1}\,s_{k-1}^2 + \frac{(x_k - M_{k-1})^2}{k}}, \qquad k \ge 2,\ s_1^2 \text{ undefined}$$</div>
+            <div class="table-scroll">
+              <table class="data-table">
+                <thead><tr><th scope="col">Quantity</th><th scope="col">Recurrence</th><th scope="col">Start</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">Mean</th><td>$M_k = M_{k-1} + (x_k - M_{k-1})/k$</td><td>$M_0 = 0$</td></tr>
+                  <tr><th scope="row">Sum of squares</th><td>$S_k = S_{k-1} + (x_k - M_{k-1})(x_k - M_k)$</td><td>$S_0 = 0$</td></tr>
+                  <tr><th scope="row">Sampling variance</th><td>$s_k^2 = S_k/(k-1)$</td><td>$k \ge 2$</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- ============================================================ code -->
+          <section class="hw-card" aria-labelledby="code-heading">
+            <h3 id="code-heading">The code</h3>
+            <p>The state is three numbers, $k$, $M$ and $S$. Each new value costs one subtraction, one division, one multiplication: the core is three lines.</p>
+            <div class="code-block">
+              <pre><code class="language-javascript">const delta = x - mean;        // x_k - M_{k-1}
+mean += delta / k;             // Knuth:   M_k = M_{k-1} + (x_k - M_{k-1}) / k
+ss += delta * (x - mean);      // Welford: S_k = S_{k-1} + (x_k - M_{k-1})(x_k - M_k)</code></pre>
+            </div>
+            <p>The complete accumulator, used by all the simulations on this page (<a href="./welford.js">welford.js</a>):</p>
+            <div class="code-block">
+              <pre><code class="language-javascript">class Welford {
+  constructor() {
+    this.k = 0;
+    this.mean = 0;
+    this.ss = 0;
+  }
+
+  push(x) {
+    this.k += 1;
+    const delta = x - this.mean;
+    this.mean += delta / this.k;
+    this.ss += delta * (x - this.mean);
+    return this;
+  }
+
+  get variance() { return this.k > 1 ? this.ss / (this.k - 1) : NaN; }  // s^2
+  get populationVariance() { return this.k > 0 ? this.ss / this.k : NaN; }
+}</code></pre>
+            </div>
+            <p>The same in Python:</p>
+            <div class="code-block">
+              <pre><code class="language-python">class Welford:
+    def __init__(self):
+        self.k, self.mean, self.ss = 0, 0.0, 0.0
+
+    def push(self, x):
+        self.k += 1
+        delta = x - self.mean
+        self.mean += delta / self.k
+        self.ss += delta * (x - self.mean)
+
+    @property
+    def variance(self):
+        return self.ss / (self.k - 1) if self.k > 1 else float("nan")</code></pre>
+            </div>
+            <p>The order matters: <code>delta</code> is computed with the old mean, the last line uses the new one, so the product is $(x_k - M_{k-1})(x_k - M_k)$.</p>
+          </section>
+
+          <!-- ============================================================ trace -->
+          <section class="hw-card" aria-labelledby="trace-heading" data-trace>
+            <h3 id="trace-heading">Step-by-step trace</h3>
+            <p>Every row is one call of <code>push</code>. The last row agrees with the mean and variance computed from the whole list at once.</p>
+            <form class="lab-controls">
+              <label class="lab-grow">Values (separated by spaces or commas)
+                <textarea name="values" spellcheck="false">3 7 4 9 2 6 5 8</textarea>
+              </label>
+              <button class="lab-button" type="submit"><i class="fa-solid fa-play" aria-hidden="true"></i>Run</button>
+            </form>
+            <div data-trace-output></div>
+          </section>
+
+          <!-- ============================================================ stability -->
+          <section class="hw-card" aria-labelledby="stab-heading">
+            <h3 id="stab-heading">Why not simply $\sum x^2 - (\sum x)^2/n$?</h3>
+            <p>The textbook one-pass formula $s^2 = \left(\sum x_i^2 - (\sum x_i)^2/n\right)/(n-1)$ also needs only running sums, but it subtracts two huge, nearly equal numbers. In double precision (about 16 significant digits) the difference loses all its digits when the mean is large compared with the spread: <strong>catastrophic cancellation</strong>. The two-pass formula is accurate but needs to store the data. Welford's recurrence works on deviations from the running mean, which stay of the size of the spread, so it is one-pass <em>and</em> stable.</p>
+            <div data-stability></div>
+            <p>In practice this matters for timestamps, byte counters or sensor readings with a large baseline: summing their squares overflows the precision long before the values themselves do.</p>
+          </section>
+        </section>
+
+        <!-- ################################################################ EXERCISE 2 -->
+        <section class="exercise" aria-labelledby="ex2-heading">
+          <p class="eyebrow">Exercise 2</p>
+          <h2 id="ex2-heading">Sampling Mean and Variance</h2>
+
+          <!-- ============================================================ model -->
+          <section class="hw-card" aria-labelledby="model-heading">
+            <h3 id="model-heading">The model</h3>
+            <p>In Homework 3 each penetration attempt was a success or a failure. Here each attempt receives a <strong>score between 0 and 10</strong>. The default distribution extends the Bernoulli model: every system is protected by 10 independent security controls (firewall, authentication, patching, …), each one broken with probability $p$, and the score is the number of controls the hacker gets through:</p>
+            <div class="formula-block">$$X = \sum_{\ell=1}^{10} B_\ell,\quad B_\ell \sim \operatorname{Bernoulli}(p) \quad\Longrightarrow\quad X \sim \operatorname{Bin}(10, p),\qquad \mu = 10p,\quad \sigma^2 = 10p(1-p)$$</div>
+            <p>With $p = 0.3$: $\mu = 3$, $\sigma^2 = 2.1$. Two other distributions can be selected for comparison: the discrete uniform on $\{0, \dots, 10\}$ ($\mu = 5$, $\sigma^2 = 10$) and the continuous uniform on $[0, 10]$ ($\mu = 5$, $\sigma^2 = 100/12 \approx 8.33$).</p>
+            <p>There are $m$ hackers, each attacking $n$ systems, so hacker $j$ produces a trajectory $X_1^{(j)}, \dots, X_n^{(j)}$ of i.i.d. scores. Each hacker feeds the scores to its own Welford accumulator and obtains</p>
+            <div class="formula-block">$$\bar X^{(j)} = M_n^{(j)}, \qquad s^{2\,(j)} = \frac{S_n^{(j)}}{n-1}, \qquad j = 1, \dots, m$$</div>
+            <p>and across the hackers we compute the averages $\frac1m\sum_j \bar X^{(j)}$ and $\frac1m\sum_j s^{2\,(j)}$, to be compared with $\mu$ and $\sigma^2$.</p>
+          </section>
+
+          <!-- ============================================================ theory -->
+          <section class="hw-card" aria-labelledby="theory-heading">
+            <h3 id="theory-heading">What theory predicts</h3>
+            <h4>The sampling mean</h4>
+            <p>By linearity and independence,</p>
+            <div class="formula-block">$$E[\bar X] = \frac1n\sum_{i=1}^n E[X_i] = \mu, \qquad \operatorname{Var}(\bar X) = \frac{1}{n^2}\sum_{i=1}^n \operatorname{Var}(X_i) = \frac{\sigma^2}{n}$$</div>
+            <p>$\bar X$ is an <strong>unbiased</strong> estimator of $\mu$ and its standard deviation, the <strong>standard error</strong>, is $\sigma/\sqrt n$.</p>
+
+            <h4>The sampling variance and Bessel's correction</h4>
+            <p>Adding and subtracting $\mu$ inside the sum of squares:</p>
+            <div class="formula-block">$$S_n = \sum_{i=1}^n (X_i - \bar X)^2 = \sum_{i=1}^n (X_i - \mu)^2 - n(\bar X - \mu)^2$$</div>
+            <p>Taking expectations, $E[(X_i - \mu)^2] = \sigma^2$ and $E[(\bar X - \mu)^2] = \operatorname{Var}(\bar X) = \sigma^2/n$, so</p>
+            <div class="formula-block">$$E[S_n] = n\sigma^2 - \sigma^2 = (n-1)\sigma^2 \quad\Longrightarrow\quad E[s^2] = E\left[\frac{S_n}{n-1}\right] = \sigma^2, \qquad E\left[\frac{S_n}{n}\right] = \frac{n-1}{n}\,\sigma^2$$</div>
+            <p>The deviations are measured from $\bar X$, which is fitted to the same data and is therefore closer to them than $\mu$: $S_n$ is systematically too small by one $\sigma^2$. One degree of freedom is spent on estimating the mean, and dividing by $n-1$ compensates exactly. The spread of $s^2$, with $\mu_4 = E[(X-\mu)^4]$, is</p>
+            <div class="formula-block">$$\operatorname{Var}(s^2) = \frac1n\left(\mu_4 - \frac{n-3}{n-1}\,\sigma^4\right) \approx \frac{\mu_4 - \sigma^4}{n}$$</div>
+            <p>so it also decreases like $1/n$, with a constant that depends on the tails of the distribution (its kurtosis).</p>
+
+            <h4>Averaging over the $m$ hackers</h4>
+            <p>The $m$ hackers are $m$ independent repetitions of the same experiment, so the averages over hackers estimate the expectations above, with errors that shrink like $1/\sqrt m$:</p>
+            <div class="formula-block">$$\frac1m\sum_{j=1}^m \bar X^{(j)} \approx \mu \pm \frac{\sigma}{\sqrt{mn}}, \qquad \frac1m\sum_{j=1}^m s^{2\,(j)} \approx \sigma^2 \pm \sqrt{\frac{\operatorname{Var}(s^2)}{m}}$$</div>
+            <p>The histogram of the $m$ values of $\bar X^{(j)}$ is an empirical picture of the <strong>sampling distribution</strong> of $\bar X$, and the same for $s^2$.</p>
+          </section>
+
+          <!-- ============================================================ simulation -->
+          <section class="hw-card" aria-labelledby="sim-heading">
+            <h3 id="sim-heading">Simulation</h3>
+            <p>Every hacker attacks $n = 1000$ systems; since Welford's algorithm is online, the sampling mean and variance after $n = 2, 5, 10, 30, 100, 1000$ systems are read from the same accumulator while the scores stream in.</p>
+            <form class="lab-controls" data-sim-form>
+              <label>Score distribution <select name="dist">
+                <option value="binomial" selected>Binomial(10, p)</option>
+                <option value="uniformDiscrete">Uniform {0, …, 10}</option>
+                <option value="uniformContinuous">Uniform [0, 10]</option>
+              </select></label>
+              <label><span>p (binomial)</span> <input type="number" name="p" min="0.01" max="0.99" step="0.01" value="0.3"></label>
+              <label>Hackers m <select name="m">
+                <option value="100">100</option>
+                <option value="1000" selected>1,000</option>
+                <option value="5000">5,000</option>
+              </select></label>
+              <button class="lab-button" type="submit"><i class="fa-solid fa-play" aria-hidden="true"></i>Simulate</button>
+            </form>
+            <div class="chart-grid">
+              <figure class="chart"><figcaption><strong>Score distribution</strong>The fixed distribution of a single attempt</figcaption><div data-chart="dist"></div></figure>
+              <div class="stat-row" data-theory></div>
+              <figure class="chart"><figcaption><strong>Running sampling mean $M_k$</strong>20 hackers; gray: $\mu \pm 2\sigma/\sqrt k$</figcaption><div data-chart="traj-mean"></div></figure>
+              <figure class="chart"><figcaption><strong>Running sampling variance $s_k^2$</strong>20 hackers; gray: $\sigma^2 \pm 2\operatorname{sd}(s_k^2)$</figcaption><div data-chart="traj-var"></div></figure>
+            </div>
+            <p>Each line is the output of one Welford accumulator after every system. At the start the estimates jump around (one score can move the mean by up to $10/k$), then they settle inside a band that narrows like $1/\sqrt k$.</p>
+          </section>
+
+          <!-- ============================================================ results -->
+          <section class="hw-card" aria-labelledby="results-heading">
+            <h3 id="results-heading">Averages across hackers and the effect of $n$</h3>
+            <div class="stat-row" data-tiles></div>
+            <div class="lab-controls">
+              <label>Systems per hacker n <select name="n" data-n>
+                <option value="2">2</option>
+                <option value="5">5</option>
+                <option value="10" selected>10</option>
+                <option value="30">30</option>
+                <option value="100">100</option>
+                <option value="1000">1,000</option>
+              </select></label>
+            </div>
+            <div class="chart-grid">
+              <figure class="chart"><figcaption><strong>Sampling means $\bar X^{(j)}$</strong>Gray curve: $N(\mu, \sigma^2/n)$; solid line $\mu$, dashed line the average</figcaption><div data-chart="hist-mean"></div></figure>
+              <figure class="chart"><figcaption><strong>Sampling variances $s^{2\,(j)}$</strong>Solid line $\sigma^2$, dashed line the average</figcaption><div data-chart="hist-var"></div></figure>
+            </div>
+            <div data-table></div>
+            <div class="chart-grid">
+              <figure class="chart"><figcaption><strong>Spread of the sampling means</strong>Dots: sd across hackers; line: $\sigma/\sqrt n$</figcaption><div data-chart="sd-mean"></div></figure>
+              <figure class="chart"><figcaption><strong>Spread of the sampling variances</strong>Dots: sd across hackers; line: $\sqrt{\operatorname{Var}(s^2)}$</figcaption><div data-chart="sd-var"></div></figure>
+            </div>
+            <p>On log-log axes both spreads fall on straight lines of slope $-1/2$: multiplying the number of systems by 100 makes the sampling means and the sampling variances 10 times more precise.</p>
+          </section>
+
+          <!-- ============================================================ conclusions -->
+          <section class="hw-card" aria-labelledby="conclusions-heading">
+            <h3 id="conclusions-heading">Conclusions</h3>
+            <h4>What the comparisons show</h4>
+            <ul>
+              <li><strong>The average of the sampling means equals $\mu$</strong> for every $n$, even $n = 2$: $\bar X$ is unbiased. The residual difference is of order $\sigma/\sqrt{mn}$ and disappears as more hackers are added.</li>
+              <li><strong>The average of the sampling variances equals $\sigma^2$</strong>, again for every $n$, because $s^2$ divides by $n-1$. The column $S_n/n$ instead stays below $\sigma^2$ by the factor $(n-1)/n$: at $n = 2$ it is half of $\sigma^2$, at $n = 1000$ the bias is negligible. The simulation confirms Bessel's correction.</li>
+              <li><strong>A single hacker is not the average.</strong> Each individual $\bar X^{(j)}$ and $s^{2\,(j)}$ can be far from $\mu$ and $\sigma^2$, especially for small $n$; unbiasedness is a property of the estimator on average over repetitions, which is exactly what the $m$ hackers reproduce.</li>
+            </ul>
+            <h4>Why this is useful in inferential statistics</h4>
+            <ul>
+              <li>In reality $\mu$ and $\sigma^2$ of the attack scores are <em>unknown</em>: an analyst sees one trajectory of $n$ scores and must estimate them. The experiment shows that $\bar X$ and $s^2$ hit the right targets on average and that their error is predictable, $\sigma/\sqrt n$ and $\sqrt{\operatorname{Var}(s^2)}$.</li>
+              <li>Because $s^2$ is unbiased for $\sigma^2$, $s/\sqrt n$ is a usable estimate of the standard error of $\bar X$. Together with the Central Limit Theorem (the histogram of $\bar X$ follows $N(\mu, \sigma^2/n)$), this gives <strong>confidence intervals</strong> $\bar X \pm 1.96\,s/\sqrt n$ and hypothesis tests on the mean, for example whether a patch has lowered the average penetration score. The coverage column checks this: the interval contains $\mu$ about 95% of the time once $n$ is moderately large; for very small $n$ it covers less, which is why Student's $t$ quantile with $n-1$ degrees of freedom replaces 1.96.</li>
+              <li>The $n-1$ that appears in $s^2$ is the same $n-1$ degrees of freedom of the $t$ and $\chi^2$ distributions used in these procedures.</li>
+              <li>Welford's recurrences make all of this available <strong>online</strong>: a monitoring system can keep $k$, $M_k$ and $S_k$ for each host or user and update the mean, the variance and a confidence interval at every event, without storing the history and without numerical trouble.</li>
+            </ul>
+            <h4>Effect of the number of systems $n$</h4>
+            <ul>
+              <li>Increasing $n$ <strong>does not change the centre</strong> of the sampling distributions (they are unbiased for every $n$), it <strong>reduces their spread</strong>: $\operatorname{sd}(\bar X) = \sigma/\sqrt n$ and $\operatorname{sd}(s^2) \approx \sqrt{(\mu_4 - \sigma^4)/n}$, both of order $1/\sqrt n$. Both estimators are <strong>consistent</strong>: they converge to $\mu$ and $\sigma^2$ (Law of Large Numbers).</li>
+              <li>The shape changes too. For small $n$ the sampling means take few values and the sampling variances are strongly right-skewed (many hackers get a small $s^2$, a few a very large one; for $n = 2$, $s^2 = (X_1 - X_2)^2/2$ is often 0). As $n$ grows both histograms become symmetric and close to normal.</li>
+              <li>The variance estimate is noisier than the mean estimate: its relative error $\operatorname{sd}(s^2)/\sigma^2 \approx \sqrt{(\kappa + 2)/n}$, with $\kappa$ the excess kurtosis, is about $\sqrt{2/n}$, so estimating the variability of an attacker requires more attempts than estimating their average score.</li>
+            </ul>
+          </section>
+        </section>
+      </article>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <p class="footer-title">Statistics in Cybersecurity</p>
+        <nav class="footer-nav" aria-label="Footer navigation">
+          <a href="../../index.html"><i class="fa-solid fa-house" aria-hidden="true"></i>Home</a>
+          <a href="../../homework.html"><i class="fa-solid fa-book-open" aria-hidden="true"></i>Homework</a>
+          <a href="../../about.html"><i class="fa-solid fa-user" aria-hidden="true"></i>About</a>
+        </nav>
+        <div class="footer-contact">
+          <a href="mailto:desanctis.2046739@studenti.uniroma1.it"><i class="fa-regular fa-envelope" aria-hidden="true"></i>desanctis.2046739@studenti.uniroma1.it</a>
+          <p><i class="fa-solid fa-id-card" aria-hidden="true"></i>Matricola 2046739</p>
+        </div>
+        <p class="footer-copyright">© <span data-current-year></span> Giada De Sanctis</p>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
