@@ -1,5 +1,15 @@
 window.homeworkData = [
   {
+    number: '06',
+    label: 'Homework 5',
+    title: 'Riemann vs Lebesgue Integration and the Numerical Computation of the Normal CDF',
+    date: '2026-11-08',
+    file: './homework/hw5/index.html',
+    tags: ['Numerical integration', 'Special functions', 'Statistics'],
+    description: "Integrals approximated by slicing the domain (Riemann) and by slicing the range and measuring the preimages (Lebesgue), compared in accuracy, convergence and cost on regular, singular and pathological functions such as Dirichlet's, Thomae's and the indicator of a fat Cantor set. The standard normal CDF is shown to be non-elementary through Liouville's theorem, represented exactly with the error function and computed efficiently with a positive series and a continued fraction, checked against a web reference and a 900-digit computation.",
+    status: 'Submitted'
+  },
+  {
     number: '05',
     label: 'Homework 4',
     title: "Welford's Recurrences and the Sampling Mean and Variance of Hackers' Scores",

@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Homework 5: numerical integration in the style of Riemann and of Lebesgue compared on regular and pathological functions, and an efficient computation of the normal CDF through the error function, with Liouville's theorem.">
+  <meta name="theme-color" content="#fbfcfa">
+  <title>Statistics in Cybersecurity</title>
+  <link rel="icon" type="image/png" href="../../images/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github-dark.min.css">
+  <link rel="stylesheet" href="../../css/theme.css">
+  <link rel="stylesheet" href="../../css/base.css">
+  <link rel="stylesheet" href="../../css/layout.css">
+  <link rel="stylesheet" href="../../css/components.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+  <script defer src="../../js/homework-data.js"></script>
+  <script defer src="../../js/render.js"></script>
+  <script defer src="../../js/main.js"></script>
+  <script defer src="./integration.js"></script>
+  <script defer src="./normal-cdf.js"></script>
+  <script defer src="./hw5.js"></script>
+</head>
+<body>
+  <div class="site-shell">
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="../../index.html" aria-label="Statistics in Cybersecurity home">
+          <i class="fa-solid fa-book-open brand-icon" aria-hidden="true"></i>
+          <span>Giada De Sanctis 2046739</span>
+        </a>
+        <div class="header-actions">
+          <nav class="site-nav" id="primary-navigation" data-site-nav aria-label="Primary navigation">
+            <ul class="nav-links">
+              <li><a class="nav-link" data-nav-section="home" href="../../index.html"><i class="fa-solid fa-house nav-icon" aria-hidden="true"></i>Home</a></li>
+              <li><a class="nav-link" data-nav-section="homework" href="../../homework.html"><i class="fa-solid fa-book-open nav-icon" aria-hidden="true"></i>Homework</a></li>
+              <li><a class="nav-link" data-nav-section="about" href="../../about.html"><i class="fa-solid fa-user nav-icon" aria-hidden="true"></i>About</a></li>
+            </ul>
+          </nav>
+          <button class="menu-toggle" type="button" data-menu-toggle aria-label="Open navigation menu" aria-controls="primary-navigation" aria-expanded="false">
+            <span aria-hidden="true">☰</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <article class="post-content container reading-width reading-width--roomy" data-render-math>
+        <header class="post-header">
+          <p class="eyebrow">Homework 5 · Integration and special functions</p>
+          <h1>Homework 5</h1>
+          <h2>Riemann vs Lebesgue Integration and the Numerical Computation of the Normal CDF</h2>
+          <p class="homework-date"><i class="fa-regular fa-calendar" aria-hidden="true"></i><time datetime="2026-11-08">08/11/2026</time></p>
+        </header>
+
+        <!-- ################################################################ EXERCISE 1 -->
+        <section class="exercise" aria-labelledby="ex1-heading">
+          <p class="eyebrow">Exercise 1</p>
+          <h2 id="ex1-heading">Riemann and Lebesgue Integration</h2>
+
+          <!-- ============================================================ definitions -->
+          <section class="hw-card" aria-labelledby="def-heading">
+            <h3 id="def-heading">Two ways of slicing an area</h3>
+            <p><strong>Riemann</strong> slices the <em>domain</em>. Split $[a,b]$ into cells $I_i$ of width $h$, choose a tag $t_i \in I_i$ in each and add up the rectangles:</p>
+            <div class="formula-block">$$R_n(f) = \sum_{i=1}^{n} f(t_i)\,h$$</div>
+            <p>$f$ is Riemann integrable when the sums converge to the same number for <em>every</em> choice of tags. Equivalently, the upper and lower sums, which use the supremum and the infimum of $f$ on each cell, must have the same limit.</p>
+            <p><strong>Lebesgue</strong> slices the <em>range</em>. Split the values into levels $y_0 &lt; y_1 &lt; \dots &lt; y_K$, take the preimage of each band and weigh the band by the measure $\mu$ (the total length) of that preimage:</p>
+            <div class="formula-block">$$E_j = \{x : y_j \le f(x) &lt; y_{j+1}\}, \qquad L_K(f) = \sum_{j=0}^{K-1} \frac{y_j + y_{j+1}}{2}\,\mu(E_j)$$</div>
+            <p>A cell of the domain is an interval, but $E_j$ can be any measurable set: it can be scattered over many pieces, or even be a Cantor-like set. Replacing the tag by $y_j$ or by $y_{j+1}$ gives a lower and an upper sum on the same levels, and these differ by at most $\Delta y\,(b-a)$ when the levels have spacing $\Delta y$. <strong>This holds for every bounded measurable $f$</strong>, however irregular, which is the real gain of the definition.</p>
+            <p>With $G(y) = \mu\{x : f(x) \ge y\}$, the distribution of the values of $f$, the sum rearranges into the <strong>layer cake</strong> formula for $f \ge 0$:</p>
+            <div class="formula-block">$$\int_a^b f\,dx = \int_0^\infty G(y)\,dy$$</div>
+            <p>$\mu(E_j) = G(y_j) - G(y_{j+1})$, and summing by parts shows that $L_K$ with the midpoint tag is exactly the <strong>trapezoidal rule applied to $G$</strong>. The accuracy of $L_K$ therefore depends on how regular $G$ is, not on how regular $f$ is.</p>
+            <p>The two theories are consistent. If $f$ is Riemann integrable on $[a,b]$, it is Lebesgue integrable and the integrals coincide. By the <strong>Lebesgue criterion</strong>, a bounded $f$ is Riemann integrable exactly when its set of discontinuities has measure zero.</p>
+          </section>
+
+          <!-- ============================================================ methods -->
+          <section class="hw-card" aria-labelledby="schemes-heading">
+            <h3 id="schemes-heading">The numerical schemes</h3>
+            <p>The Riemann scheme is the midpoint rule, because its tag is the natural one and its error is $O(h^2)$ on smooth functions. Lebesgue is less direct: one needs the measure of a preimage, which a computer does not know. Two schemes are used here (<a href="./integration.js">integration.js</a>).</p>
+            <ul>
+              <li><strong>Exact preimages.</strong> For each level $y$, a fixed scan grid shows in which cells $f - y$ changes sign and bisection refines each crossing to machine precision. Then $G(y)$ is a sum of interval lengths. Jumps are handled too, since bisection converges to them.</li>
+              <li><strong>Sampled preimages.</strong> Evaluate $f$ on $N$ midpoints and count how many values fall in each band, so that $\mu(E_j) \approx \text{count}_j \cdot h$. There is no root finding, but the accuracy cannot exceed that of the grid.</li>
+            </ul>
+            <div class="code-block">
+              <pre><code class="language-javascript">// Riemann: slice the domain, one evaluation per cell.
+const riemannMidpoint = (f, a, b, n) => {
+  const h = (b - a) / n;
+  let sum = 0;
+  for (let i = 0; i &lt; n; i += 1) sum += f(a + (i + 0.5) * h);
+  return sum * h;
+};
+
+// Lebesgue: slice the range, weigh each band by the measure of its preimage.
+// G[j] = measure of {f >= levels[j]}, found with a scan grid and bisection.
+let value = 0;
+for (let j = 0; j &lt; K; j += 1) {
+  const measure = G[j] - G[j + 1];                       // measure of E_j
+  value += 0.5 * (levels[j] + levels[j + 1]) * measure;  // midpoint tag
+}</code></pre>
+            </div>
+            <aside class="callout callout--info">
+              <strong>On a fixed grid the two ideas are the same sum</strong>
+              <p>If the sampled scheme used, as the tag of each band, the mean of the sampled values in that band, then $\sum_j \text{count}_j\, h\, \overline{f}_j = h\sum_i f(x_i)$, the Riemann sum on the same grid. Grouping by value only reorders a finite sum. A difference between the schemes can come only from the tag or from knowing the preimages better than the grid does.</p>
+            </aside>
+            <h4>What to expect</h4>
+            <div class="table-scroll">
+              <table class="data-table">
+                <thead><tr><th scope="col">Feature of $f$</th><th scope="col">Riemann midpoint</th><th scope="col">Lebesgue, midpoint tag</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">Smooth</th><td>$O(n^{-2})$</td><td>$O(K^{-3/2})$ at a critical point: $G$ has a square-root singularity</td></tr>
+                  <tr><th scope="row">Kink, linear pieces</th><td>$O(n^{-2})$</td><td>exact: $G$ is linear</td></tr>
+                  <tr><th scope="row">Jump</th><td>$O(n^{-1})$</td><td>$O(K^{-1})$ in general, from the atoms of the distribution of values</td></tr>
+                  <tr><th scope="row">Unbounded</th><td>$O(n^{-1/2})$ for $1/\sqrt x$</td><td>faster, if the levels are chosen geometrically</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>The sizes $n$ and $K$ are odd below. With even $n$ the point $x = 0.5$ would be a cell boundary and the midpoint rule would be exact on the step functions and on $|x-0.5|$ by luck, not by merit.</p>
+          </section>
+
+          <!-- ============================================================ lab -->
+          <section class="hw-card" aria-labelledby="lab-heading">
+            <h3 id="lab-heading">The two partitions on one function</h3>
+            <form class="lab-controls" data-int-lab>
+              <label class="lab-grow">Function <select name="fn">
+                <option value="sin" selected>sin(x) on [0, π]</option>
+                <option value="square">x² on [0, 1]</option>
+                <option value="sinc">sin(x)/x on [0, π]</option>
+                <option value="abs">|x − 0.5| on [0, 1]</option>
+                <option value="step13">1 if x &lt; 0.5, 3 otherwise</option>
+                <option value="step10">1 if x &lt; 0.5, 0 otherwise</option>
+                <option value="stepPi">1 if x &lt; 1/π, 3 otherwise</option>
+                <option value="invSqrt">1/√x on (0, 1]</option>
+              </select></label>
+              <label>Cells n: <output data-n-out>11</output> <input type="range" name="n" min="3" max="61" step="2" value="11"></label>
+              <label>Levels K: <output data-k-out>8</output> <input type="range" name="K" min="2" max="30" step="1" value="8"></label>
+            </form>
+            <div class="stat-row" data-pic-tiles></div>
+            <div class="chart-grid">
+              <figure class="chart"><figcaption><strong>Riemann: cells of the domain</strong>Each rectangle has the height of $f$ at the midpoint of its cell</figcaption><div data-pic="riemann"></div></figure>
+              <figure class="chart"><figcaption><strong>Lebesgue: bands of the range</strong>Each band paints its preimage, with height the midpoint of the band; colours alternate between bands</figcaption><div data-pic="lebesgue"></div></figure>
+            </div>
+            <p>Fewer levels make the structure clear. For $\sin x$ the preimage of every band except the top one is made of two separate pieces, one on each side: a Lebesgue rectangle has no reason to be contiguous. For $1/\sqrt x$ the picture is clipped at height 6, while the levels keep growing geometrically.</p>
+            <figure class="chart chart--full"><figcaption><strong>Error against computational cost</strong>Selected function, log-log. Cost is the number of evaluations of $f$; points below rounding level are not drawn</figcaption><div data-chart="conv"></div></figure>
+          </section>
+
+          <!-- ============================================================ summary -->
+          <section class="hw-card" aria-labelledby="summary-heading">
+            <h3 id="summary-heading">Accuracy, convergence and efficiency</h3>
+            <div data-summary><p class="keygen-note">Computing…</p></div>
+            <ul>
+              <li><strong>The limits agree.</strong> All the functions here are Riemann integrable (or improperly so, for $1/\sqrt x$) and every scheme approaches the exact value, as the theorem requires.</li>
+              <li><strong>On smooth functions Riemann is better.</strong> Its order is 2 against about 3/2, and it pays one evaluation per cell while the exact-preimage scheme pays some 30-50 bisection evaluations for every crossing. To reach $10^{-3}$ on $\sin x$, the exact-preimage scheme costs a few hundred times more evaluations, the sampled one about thirty times more.</li>
+              <li><strong>On piecewise linear functions and symmetric steps Lebesgue is exact</strong>, since $G$ is piecewise linear. The two symmetric steps are special: the errors of the two atoms cancel because they have equal weight. The step at $1/\pi$ has unequal weights, and both schemes fall back to order 1.</li>
+              <li><strong>At a singularity Lebesgue wins clearly</strong>, with order about 1.5 against 0.5 and some 27 times fewer evaluations to reach $10^{-3}$. The next table isolates this case.</li>
+            </ul>
+            <h4>The unbounded function $1/\sqrt x$</h4>
+            <p>Near $x=0$ a uniform grid has no resolution where $f$ is large: the first cell alone misses a share of the integral of order $\sqrt h$, so the error decays only like $n^{-1/2}$. The range sees the problem directly: $G(y) = \min(1, y^{-2})$ is known exactly and the levels can be packed where they are needed, with geometric spacing up to a height $K^2$. With uniform levels the same scheme is poor: reaching a high cut needs wide bands, and they are too coarse at low values, where $G$ changes fastest. <em>The advantage comes from choosing the levels, not from the name of the method.</em></p>
+            <div data-singular><p class="keygen-note">Computing…</p></div>
+          </section>
+
+          <!-- ============================================================ pathological -->
+          <section class="hw-card" aria-labelledby="path-heading">
+            <h3 id="path-heading">Pathological functions</h3>
+            <p>Grid sampling has no meaning here: a <code>double</code> is always a dyadic rational, so a naive <code>isRational(x)</code> would answer true on every point, $\sqrt 2$ and <code>Math.random()</code> included. What follows therefore works with <strong>tags described symbolically</strong> and with exact integer arithmetic.</p>
+
+            <h4>Dirichlet's function: the sums do not converge</h4>
+            <p>$f = \mathbf 1_{\mathbb Q}$ on $[0,1]$. Every cell contains rationals and irrationals, so the upper sum is 1 and the lower sum is 0 for every $n$. The tags $i/n$ are rational and the tags $(i + 1/\sqrt 2)/n$ are irrational, which gives Riemann sums that stay at 1 and at 0, and a mixed choice lands anywhere in between.</p>
+            <div data-dirichlet><p class="keygen-note">Computing…</p></div>
+            <p>The Lebesgue integral exists and is $0$. The rationals are countable, $\mathbb Q \cap [0,1] = \{q_1, q_2, \dots\}$; covering $q_k$ with an interval of length $\varepsilon\, 2^{-k}$ uses total length at most $\varepsilon$, for every $\varepsilon &gt; 0$. Hence $\mu(\mathbb Q \cap [0,1]) = 0$ and</p>
+            <div class="formula-block">$$\int_{[0,1]} \mathbf 1_{\mathbb Q}\,d\mu = 1\cdot\mu(\mathbb Q\cap[0,1]) + 0\cdot\mu([0,1]\setminus\mathbb Q) = 0$$</div>
+            <p>This is the sharpest difference between the two approaches. The range has only two values, so the Lebesgue computation needs just two measures; the domain has no useful partition at all.</p>
+
+            <h4>Thomae's function: same value, opposite mechanism</h4>
+            <p>$f(p/q) = 1/q$ in lowest terms, $f(0) = f(1) = 1$, $f = 0$ on the irrationals. It is continuous at every irrational and discontinuous at every rational, a null set, so it is Riemann integrable with integral 0. Here the sums can be computed exactly: the supremum on a cell is $1/q$, with $q$ the smallest denominator of a fraction in that cell, found with the Stern-Brocot tree.</p>
+            <div data-thomae><p class="keygen-note">Computing…</p></div>
+            <p>The upper sums vanish, but slowly: the column $U_n\sqrt n$ settles near a constant, i.e. $U_n \approx n^{-1/2}$, an order much lower than on regular functions. On the Lebesgue side the answer is immediate, because each set $\{f \ge t\}$ with $t &gt; 0$ is finite:</p>
+            <div data-thomae-points><p class="keygen-note">Computing…</p></div>
+            <p>All the positive values live on a null set and $\int f\,d\mu = 0$ with no limit to take.</p>
+
+            <h4>The fat Cantor set: Riemann fails on a set of positive measure</h4>
+            <p>Dirichlet's function has a Lebesgue integral equal to 0, so one might believe that non-integrable behaviour requires a negligible answer. The Smith-Volterra-Cantor set $C$ shows otherwise. Start from $[0,1]$ and at step $k$ remove the open middle gap of length $4^{-k}$ from each of the $2^{k-1}$ remaining intervals. The removed length is $\sum_k 2^{k-1}4^{-k} = 1/2$, so $\mu(C) = 1/2$, and $C$ contains no interval. For $f = \mathbf 1_C$ the gaps are dense, so the infimum on any cell is 0; the upper sum counts the cells touching $C$.</p>
+            <div data-cantor><p class="keygen-note">Computing…</p></div>
+            <p>The upper sum tends to $1/2$ and the lower sum is 0, so $f$ is not Riemann integrable: its discontinuities are exactly the points of $C$, which have positive measure. The Lebesgue integral is $\mu(C) = 1/2$. Tags chosen uniformly at random give about $1/2$, because a random point falls in $C$ with probability $\mu(C)$: <strong>Monte Carlo estimates the Lebesgue integral</strong>, and it does so without any regularity assumption.</p>
+          </section>
+
+          <!-- ============================================================ conclusions -->
+          <section class="hw-card" aria-labelledby="ex1-conc-heading">
+            <h3 id="ex1-conc-heading">Conclusions</h3>
+            <ul>
+              <li>For Riemann-integrable functions both approaches converge to the same value, as predicted, and the tables above confirm it.</li>
+              <li>As a <strong>numerical method</strong> Riemann is simpler and cheaper on smooth functions. Lebesgue needs a measure of each preimage, which is a harder problem than the integral itself unless $G$ is available.</li>
+              <li>The Lebesgue point of view pays off when <strong>the range is simpler than the domain</strong>: integrands with few values, level sets known in closed form, or singularities where the values rather than the positions tell where the integral lives.</li>
+              <li>As a <strong>definition</strong> Lebesgue is stronger. It assigns a value to Dirichlet's function and to $\mathbf 1_C$, where Riemann sums depend on the tags and have no limit, and its bracket $\Delta y\,(b-a)$ needs no regularity of $f$.</li>
+            </ul>
+          </section>
+        </section>
+
+        <!-- ################################################################ EXERCISE 2 -->
+        <section class="exercise" aria-labelledby="ex2-heading">
+          <p class="eyebrow">Exercise 2</p>
+          <h2 id="ex2-heading">Numerical Computation of the Normal CDF</h2>
+
+          <!-- ============================================================ definition -->
+          <section class="hw-card" aria-labelledby="cdf-heading">
+            <h3 id="cdf-heading">The function to compute</h3>
+            <p>The standard normal density and its CDF are</p>
+            <div class="formula-block">$$\varphi(t) = \frac{1}{\sqrt{2\pi}}\,e^{-t^2/2}, \qquad \Phi(z) = \int_{-\infty}^{z} \varphi(t)\,dt$$</div>
+            <p>(see <a href="https://faculty.etsu.edu/gardnerr/4047/notes-Hogg-McKean-Craig/Hogg-McKean-Craig-3-4.pdf">Hogg, McKean and Craig, Section 3.4</a>, on the normal distribution). The constant is exact, because the integral over the whole line can be computed by squaring it and passing to polar coordinates:</p>
+            <div class="formula-block">$$\left(\int_{-\infty}^{\infty} e^{-t^2/2}dt\right)^{\!2} = \int_0^{2\pi}\!\!\int_0^\infty e^{-r^2/2}\, r\,dr\,d\theta = 2\pi$$</div>
+            <p>This trick works only for the integral over all of $\mathbb R$. For a finite upper limit $z$ no such shortcut exists, and the next card explains why.</p>
+          </section>
+
+          <!-- ============================================================ liouville -->
+          <section class="hw-card" aria-labelledby="liouville-heading">
+            <h3 id="liouville-heading">Why $\Phi$ is not an elementary function: Liouville's theorem</h3>
+            <p>An <strong>elementary function</strong> is built from rational functions, exponentials, logarithms and algebraic functions by finitely many sums, products and compositions. The question is whether an elementary $F$ exists with $F' = e^{-t^2/2}$.</p>
+            <p><strong>Theorem (Liouville, in the form due to Rosenlicht).</strong> Let $f$ and $g$ be rational functions with $g$ non-constant. Then $\int f\,e^{g}\,dt$ is elementary if and only if there is a rational function $R$ with</p>
+            <div class="formula-block">$$f = R' + g'\,R$$</div>
+            <p>The idea is that if $\int f e^g$ were elementary, it would have the form $R\,e^g$: differentiating gives $(R' + g'R)e^g$, and comparing with $f e^g$ yields the condition.</p>
+            <p>Here $f = 1$ and $g = -t^2/2$, so the question becomes whether a rational $R$ exists with</p>
+            <div class="formula-block">$$R'(t) - t\,R(t) = 1$$</div>
+            <ul>
+              <li><strong>$R$ has no poles.</strong> A pole of order $m \ge 1$ at $t_0$ makes $R'$ have a pole of order $m+1$, while $tR$ has one of order at most $m$. The left side would be singular at $t_0$, but the right side is the constant 1.</li>
+              <li><strong>$R$ is then a polynomial</strong>, and $R \ne 0$ since $0 \ne 1$. If its degree is $d$, then $tR$ has degree $d+1 \ge 1$ and $R'$ has degree $d-1$, so the left side has degree $d+1 \ge 1$ and cannot equal a constant.</li>
+            </ul>
+            <p>No such $R$ exists, so $e^{-t^2/2}$ has no elementary antiderivative and $\Phi$ has no closed form in terms of elementary functions. This is a statement about the <em>form</em> of $\Phi$ and not about its existence: $\Phi$ is smooth and well defined, and a table of its values is perfectly legitimate.</p>
+          </section>
+
+          <!-- ============================================================ erf -->
+          <section class="hw-card" aria-labelledby="erf-heading">
+            <h3 id="erf-heading">The error function, and why numerics are still needed</h3>
+            <p>The mathematical response is to give this integral a name. The <strong>error function</strong> and its complement are</p>
+            <div class="formula-block">$$\operatorname{erf}(x) = \frac{2}{\sqrt\pi}\int_0^x e^{-u^2}du, \qquad \operatorname{erfc}(x) = 1 - \operatorname{erf}(x)$$</div>
+            <p>With $t = \sqrt2\,u$ the CDF has the exact representation</p>
+            <div class="formula-block">$$\boxed{\Phi(z) = \frac12\left[1 + \operatorname{erf}\!\left(\frac{z}{\sqrt 2}\right)\right] = \frac12\operatorname{erfc}\!\left(-\frac{z}{\sqrt 2}\right)}$$</div>
+            <p>This is an exact identity, but it only moves the problem: $\operatorname{erf}$ is defined by the same kind of integral. A special function is an analytical tool that gives properties, identities and series; to get digits one still needs an algorithm. Elementary functions such as $e^x$ are also computed by approximation, so the difference is only that they are provided by every math library, while $\operatorname{erf}$ often is not. JavaScript, for one, has no <code>Math.erf</code>.</p>
+          </section>
+
+          <!-- ============================================================ methods -->
+          <section class="hw-card" aria-labelledby="meth-heading">
+            <h3 id="meth-heading">Numerical approaches</h3>
+            <h4>Numerical integration</h4>
+            <p>Since $\Phi(z) = \tfrac12 + \int_0^z \varphi$, the trapezoidal rule (error $O(n^{-2})$) and Simpson's rule (error $O(n^{-4})$) apply directly.</p>
+            <h4>Power series</h4>
+            <p>Integrating the exponential series term by term gives</p>
+            <div class="formula-block">$$\Phi(z) = \frac12 + \frac{1}{\sqrt{2\pi}}\sum_{k=0}^{\infty}\frac{(-1)^k\, z^{2k+1}}{2^k\, k!\,(2k+1)}$$</div>
+            <p>It converges for every $z$, but the terms alternate and grow up to about $e^{z^2/2}$ in size before they decrease. In floating point that is <strong>catastrophic cancellation</strong>, the same issue as the naive variance formula of Homework 4.</p>
+            <p>The cure is an all-positive series. Let $S(z) = z + \frac{z^3}{3} + \frac{z^5}{3\cdot 5} + \dots$. Then $S' = 1 + zS$, so $(e^{-z^2/2}S)' = e^{-z^2/2}$, and</p>
+            <div class="formula-block">$$\Phi(z) = \frac12 + \varphi(z)\left(z + \frac{z^3}{3} + \frac{z^5}{3\cdot 5} + \frac{z^7}{3\cdot5\cdot7} + \dots\right)$$</div>
+            <p>No term cancels another, and the sum is accurate to rounding for the central part of the distribution.</p>
+            <h4>Tails and a continued fraction</h4>
+            <p>In the lower tail $\Phi(-z)$ is tiny, and computing it as $\tfrac12 - (\dots)$ loses every digit, whatever the accuracy of the bracket. For $x &gt; 0$ Laplace's continued fraction gives the tail directly:</p>
+            <div class="formula-block">$$\operatorname{erfc}(x) = \frac{e^{-x^2}}{\sqrt\pi}\;\cfrac{1}{x + \cfrac{1/2}{x + \cfrac{2/2}{x + \cfrac{3/2}{x + \dots}}}}$$</div>
+            <p>It needs fewer iterations as $x$ grows, which is the opposite behaviour of the series, so the two complement each other.</p>
+            <h4>The proposed method</h4>
+            <p><strong>$\Phi(z) = \tfrac12\operatorname{erfc}(-z/\sqrt2)$</strong>, with $\operatorname{erf}$ from the positive series for $x &lt; 1.75$ and $\operatorname{erfc}$ from the continued fraction, evaluated with the modified Lentz algorithm, for $x \ge 1.75$ (<a href="./normal-cdf.js">normal-cdf.js</a>). The switch is at the point where the two costs and accuracies balance. $e^{-x^2}$ is split as $e^{-w^2}e^{-(x-w)(x+w)}$, with $w$ a multiple of $1/16$, to avoid the rounding error of $x^2$ in the far tail.</p>
+            <div class="code-block">
+              <pre><code class="language-javascript">const erfSeries = (x) => {          // erf(x), 0 &lt;= x &lt; 1.75
+  let term = x, sum = x, k = 0;
+  while (Math.abs(term) > 1e-17 * sum) {
+    term *= (2 * x * x) / (2 * k + 3);
+    sum += term;
+    k += 1;
+  }
+  return (2 / Math.sqrt(Math.PI)) * expMinusSquare(x) * sum;
+};
+
+const erfcFraction = (x) => {       // erfc(x), x >= 1.75, modified Lentz
+  let f = x, c = x, d = 0;
+  for (let k = 1; k &lt; 2000; k += 1) {
+    d = 1 / (x + (k / 2) * d);
+    c = x + (k / 2) / c;
+    const delta = c * d;
+    f *= delta;
+    if (Math.abs(delta - 1) &lt; 1e-16) break;
+  }
+  return expMinusSquare(x) / Math.sqrt(Math.PI) / f;
+};
+
+const erfc = (x) => x &lt; 0 ? 2 - erfc(-x) : x &lt; 1.75 ? 1 - erfSeries(x) : erfcFraction(x);
+const normalCdf = (z) => 0.5 * erfc(-z / Math.SQRT2);</code></pre>
+            </div>
+            <form class="lab-controls" data-calc>
+              <label>z <input type="number" name="z" step="any" value="1.96"></label>
+              <button class="lab-button" type="submit"><i class="fa-solid fa-play" aria-hidden="true"></i>Compute</button>
+            </form>
+            <div class="stat-row" data-calc-output></div>
+          </section>
+
+          <!-- ============================================================ comparison -->
+          <section class="hw-card" aria-labelledby="ref-heading">
+            <h3 id="ref-heading">Comparison with a reference from the web</h3>
+            <p>The <a href="https://en.wikipedia.org/wiki/68%E2%80%9395%E2%80%9399.7_rule">table of the 68-95-99.7 rule</a> on Wikipedia lists $P(|Z| \le z) = \operatorname{erf}(z/\sqrt 2)$ to 15 decimals. Since $\Phi(z) = (1 + P)/2$, the two can be compared directly.</p>
+            <div data-web></div>
+            <p>The agreement is within one unit of the last printed digit, which is the rounding of the source combined with that of $2\Phi - 1$ in double precision. A printed table with 15 decimals cannot test the tail, though: $\Phi(-10) \approx 7.6\times 10^{-24}$ would simply read 0. For the tail I computed a separate reference with 900-digit decimal arithmetic. Python's <code>decimal</code> sums the positive series, for which more digits remove every rounding concern, and it matches <code>math.erfc</code> to the accuracy of that library.</p>
+            <div data-tail></div>
+            <p>The erf-based method keeps at least 12 correct significant digits down to $z = -37.5$, close to the smallest positive double. The mild degradation there is not an algorithmic defect: $\Phi$ has condition number about $z^2$ in the tail, so the rounding of $z/\sqrt 2$ alone costs that much.</p>
+          </section>
+
+          <!-- ============================================================ convergence -->
+          <section class="hw-card" aria-labelledby="ncon-heading">
+            <h3 id="ncon-heading">Convergence and stability</h3>
+            <div class="chart-grid">
+              <figure class="chart"><figcaption><strong>Quadrature at $z = 1.96$</strong>Slopes close to $-2$ and $-4$, until Simpson reaches the rounding floor</figcaption><div data-chart="quad"></div></figure>
+              <figure class="chart"><figcaption><strong>Alternating series</strong>At $z = 6$ the terms first grow, and the error stops near $5\times 10^{-11}$</figcaption><div data-chart="series"></div></figure>
+            </div>
+            <p>The series converges faster than any power of the number of terms, but for large $|z|$ it stalls at the level of the rounding of its largest term:</p>
+            <div data-cancel></div>
+            <p>At $z=10$ the alternating series has terms of size $10^{19}$ and returns a meaningless result, while the positive series with a similar number of terms is correct to rounding.</p>
+            <figure class="chart chart--full"><figcaption><strong>Relative error in the lower tail</strong>Log scale, against the 900-digit reference</figcaption><div data-chart="tail"></div></figure>
+            <p>Three distinct behaviours appear. Simpson and the positive series compute $\tfrac12 - (\dots)$, so their relative error explodes in the tail once $\Phi(-z)$ is below their absolute accuracy. Hastings' polynomial approximates the tail directly, so its relative error stays bounded and grows slowly, up to about 2% at $z = 10$. Only the erf-based method stays near rounding level along the whole range.</p>
+          </section>
+
+          <!-- ============================================================ benchmark -->
+          <section class="hw-card" aria-labelledby="bench-heading">
+            <h3 id="bench-heading">Efficiency</h3>
+            <div class="lab-controls"><button class="lab-button" type="button" data-bench-run><i class="fa-solid fa-play" aria-hidden="true"></i>Measure again</button></div>
+            <div data-bench><p class="keygen-note">Computing…</p></div>
+            <ul>
+              <li><strong>Quadrature</strong> is simple and general, but it pays hundreds of evaluations per call and still fails in the tail.</li>
+              <li><strong>Hastings' polynomial</strong> is the fastest, with constant cost and absolute error below $7.5\times 10^{-8}$. It is enough for many statistical uses, such as a p-value printed with three digits.</li>
+              <li><strong>The erf-based method</strong> costs a fraction of a microsecond and gives nearly full double precision in the centre and in the tails, with relative errors around $10^{-14}$. This is the right choice when the CDF is called many times or when small tail probabilities matter, for example when assessing how extreme an anomaly score is in a detection system, where $\Phi(-8)$ and $\Phi(-10)$ differ by about eight orders of magnitude.</li>
+            </ul>
+          </section>
+
+          <!-- ============================================================ conclusions -->
+          <section class="hw-card" aria-labelledby="conc2-heading">
+            <h3 id="conc2-heading">Conclusions</h3>
+            <ul>
+              <li>$\Phi$ has <strong>no elementary closed form</strong>, by Liouville's theorem. The equation $R' - tR = 1$ has no rational solution.</li>
+              <li>$\operatorname{erf}$ gives an <strong>exact representation</strong>, $\Phi(z) = \tfrac12\operatorname{erfc}(-z/\sqrt2)$, but a representation is not an algorithm. Numerics are still required, as they are for any special function.</li>
+              <li>The choice of algorithm matters as much as the formula. The same quantity, computed with an alternating series, a quadrature or a continued fraction, ranges from no correct digit to full double precision, depending on $z$.</li>
+              <li>The combination of a positive series and a continued fraction agrees with the web reference within one unit of its last printed digit and with a 900-digit reference to at least 12 significant digits everywhere, in a few hundred nanoseconds.</li>
+            </ul>
+          </section>
+        </section>
+      </article>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <p class="footer-title">Statistics in Cybersecurity</p>
+        <nav class="footer-nav" aria-label="Footer navigation">
+          <a href="../../index.html"><i class="fa-solid fa-house" aria-hidden="true"></i>Home</a>
+          <a href="../../homework.html"><i class="fa-solid fa-book-open" aria-hidden="true"></i>Homework</a>
+          <a href="../../about.html"><i class="fa-solid fa-user" aria-hidden="true"></i>About</a>
+        </nav>
+        <div class="footer-contact">
+          <a href="mailto:desanctis.2046739@studenti.uniroma1.it"><i class="fa-regular fa-envelope" aria-hidden="true"></i>desanctis.2046739@studenti.uniroma1.it</a>
+          <p><i class="fa-solid fa-id-card" aria-hidden="true"></i>Matricola 2046739</p>
+        </div>
+        <p class="footer-copyright">© <span data-current-year></span> Giada De Sanctis</p>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
