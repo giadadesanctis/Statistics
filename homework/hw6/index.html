@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Homework 6: contingency tables, marginal and conditional frequencies, expected frequencies under independence, the chi-square test and its p-value on security datasets, and the difference between statistical association and causality.">
+  <meta name="theme-color" content="#fbfcfa">
+  <title>Statistics in Cybersecurity</title>
+  <link rel="icon" type="image/png" href="../../images/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github-dark.min.css">
+  <link rel="stylesheet" href="../../css/theme.css">
+  <link rel="stylesheet" href="../../css/base.css">
+  <link rel="stylesheet" href="../../css/layout.css">
+  <link rel="stylesheet" href="../../css/components.css">
+  <style>
+    /* Totals of a contingency table */
+    .data-table .is-total { background: var(--color-subtle); font-weight: 600; }
+    .data-table td { font-variant-numeric: tabular-nums; }
+    .chart-segment-label { fill: #ffffff; font-size: 11px; font-weight: 600; pointer-events: none; }
+    .chart-rejection { fill: #eb6834; fill-opacity: 0.18; }
+    .chart-observed { stroke: var(--color-heading); stroke-width: 2; stroke-dasharray: 5 3; }
+    .chart-critical { stroke: #eb6834; stroke-width: 1.5; }
+  </style>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+  <script defer src="../../js/homework-data.js"></script>
+  <script defer src="../../js/render.js"></script>
+  <script defer src="../../js/main.js"></script>
+  <script defer src="./independence.js"></script>
+  <script defer src="./hw6.js"></script>
+</head>
+<body>
+  <div class="site-shell">
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="../../index.html" aria-label="Statistics in Cybersecurity home">
+          <i class="fa-solid fa-book-open brand-icon" aria-hidden="true"></i>
+          <span>Giada De Sanctis 2046739</span>
+        </a>
+        <div class="header-actions">
+          <nav class="site-nav" id="primary-navigation" data-site-nav aria-label="Primary navigation">
+            <ul class="nav-links">
+              <li><a class="nav-link" data-nav-section="home" href="../../index.html"><i class="fa-solid fa-house nav-icon" aria-hidden="true"></i>Home</a></li>
+              <li><a class="nav-link" data-nav-section="homework" href="../../homework.html"><i class="fa-solid fa-book-open nav-icon" aria-hidden="true"></i>Homework</a></li>
+              <li><a class="nav-link" data-nav-section="about" href="../../about.html"><i class="fa-solid fa-user nav-icon" aria-hidden="true"></i>About</a></li>
+            </ul>
+          </nav>
+          <button class="menu-toggle" type="button" data-menu-toggle aria-label="Open navigation menu" aria-controls="primary-navigation" aria-expanded="false">
+            <span aria-hidden="true">☰</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <article class="post-content container reading-width reading-width--roomy" data-render-math>
+        <header class="post-header">
+          <p class="eyebrow">Homework 6 · Statistical independence</p>
+          <h1>Homework 6</h1>
+          <h2>Statistical Independence: Contingency Tables and the Chi-Square Test on Security Data</h2>
+          <p class="homework-date"><i class="fa-regular fa-calendar" aria-hidden="true"></i><time datetime="2026-11-13">13/11/2026</time></p>
+        </header>
+
+        <section class="exercise" aria-labelledby="ex1-heading">
+          <p class="eyebrow">Exercise 1</p>
+          <h2 id="ex1-heading">Statistical Independence</h2>
+
+          <!-- ============================================================ theory: probability -->
+          <section class="hw-card" aria-labelledby="prob-heading">
+            <h3 id="prob-heading">Independence in probability</h3>
+            <p>Two events $A$ and $B$ are <strong>independent</strong> when the probability that both occur is the product of their probabilities:</p>
+            <div class="formula-block">$$P(A \cap B) = P(A)\,P(B)$$</div>
+            <p>If $P(B) &gt; 0$ this is the same as $P(A \mid B) = P(A)$: learning that $B$ occurred does not change the probability of $A$. The definition is symmetric, and if $A$ and $B$ are independent so are $A$ and $B^c$, $A^c$ and $B$, $A^c$ and $B^c$.</p>
+            <p>Two discrete random variables $X$ and $F$ are independent when every pair of events $\{X = x\}$, $\{F = f\}$ is independent, that is, when the <strong>joint distribution factorizes into the product of the marginals</strong>:</p>
+            <div class="formula-block">$$P(X = x_i,\ F = f_j) = P(X = x_i)\,P(F = f_j) \qquad \text{for every } i, j$$</div>
+            <p>Equivalently, the conditional distribution of $F$ given $X = x_i$ is the same for every $i$, and equal to the marginal distribution of $F$:</p>
+            <div class="formula-block">$$P(F = f_j \mid X = x_i) = P(F = f_j) \qquad \text{for every } i, j$$</div>
+            <p>A few consequences are worth keeping in mind.</p>
+            <ul>
+              <li>Independence is a property of the <strong>whole</strong> joint distribution. One cell satisfying the product rule is not enough: it must hold in all $r \times c$ cells.</li>
+              <li>For numerical variables, independence implies $\operatorname{Cov}(X, F) = 0$, but not conversely: $X$ uniform on $\{-1, 0, 1\}$ and $F = X^2$ are uncorrelated and completely dependent. For categorical variables there is no covariance at all, and the factorization is the only meaningful notion.</li>
+              <li>Pairwise independence of three variables does not imply mutual independence, and independence of $X$ and $F$ does not imply conditional independence given a third variable $Z$, nor the other way round. The last point is the heart of the causality section below.</li>
+            </ul>
+          </section>
+
+          <!-- ============================================================ theory: statistics -->
+          <section class="hw-card" aria-labelledby="stat-heading">
+            <h3 id="stat-heading">Independence in statistics</h3>
+            <p>In a sample of $n$ observations of the pair $(X, F)$ the probabilities are replaced by frequencies. Let $n_{ij}$ be the number of observations with $X = x_i$ and $F = f_j$, and $n_{i\cdot} = \sum_j n_{ij}$, $n_{\cdot j} = \sum_i n_{ij}$ the totals of row $i$ and column $j$. The <strong>contingency table</strong> collects the $n_{ij}$ with these margins, and from it we read three kinds of relative frequency:</p>
+            <div class="table-scroll">
+              <table class="data-table">
+                <thead><tr><th scope="col">Frequency</th><th scope="col">Formula</th><th scope="col">Estimates</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">Joint</th><td>$f_{ij} = n_{ij}/n$</td><td>$P(X = x_i, F = f_j)$</td></tr>
+                  <tr><th scope="row">Marginal</th><td>$f_{i\cdot} = n_{i\cdot}/n,\quad f_{\cdot j} = n_{\cdot j}/n$</td><td>$P(X = x_i),\ P(F = f_j)$</td></tr>
+                  <tr><th scope="row">Conditional (row profile)</th><td>$f_{j \mid i} = n_{ij}/n_{i\cdot}$</td><td>$P(F = f_j \mid X = x_i)$</td></tr>
+                  <tr><th scope="row">Conditional (column profile)</th><td>$f_{i \mid j} = n_{ij}/n_{\cdot j}$</td><td>$P(X = x_i \mid F = f_j)$</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>The two variables are <strong>statistically independent in the sample</strong> (perfect independence) when the joint frequencies are the product of the marginal ones, $f_{ij} = f_{i\cdot}\,f_{\cdot j}$, or, multiplying by $n$, when every count equals</p>
+            <div class="formula-block">$$\boxed{e_{ij} = \frac{n_{i\cdot}\, n_{\cdot j}}{n}}$$</div>
+            <p>which is again the same as saying that all the row profiles coincide with the marginal distribution of $F$. These $e_{ij}$ are the <strong>expected frequencies under independence</strong>: the table we would see if the margins were the observed ones and $X$ carried no information about $F$. They keep the margins, $\sum_j e_{ij} = n_{i\cdot}$ and $\sum_i e_{ij} = n_{\cdot j}$.</p>
+            <p>Even when $X$ and $F$ are truly independent, a random sample almost never satisfies $n_{ij} = e_{ij}$ exactly: the $e_{ij}$ are usually not even integers. The question is therefore whether the observed deviations are larger than <strong>sampling variability</strong> would produce. This is a hypothesis test of</p>
+            <div class="formula-block">$$H_0:\ p_{ij} = p_{i\cdot}\, p_{\cdot j}\ \text{for all } i, j \qquad \text{against} \qquad H_1:\ p_{ij} \ne p_{i\cdot}\, p_{\cdot j}\ \text{for some } i, j$$</div>
+            <h4>Pearson's chi-square statistic</h4>
+            <p>Under $H_0$ the maximum-likelihood estimates of $p_{i\cdot}$ and $p_{\cdot j}$ are the marginal frequencies, so $e_{ij}$ is the estimated expected count of cell $(i, j)$. Pearson's statistic adds the squared deviations, each scaled by its expected count:</p>
+            <div class="formula-block">$$\chi^2 = \sum_{i=1}^{r} \sum_{j=1}^{c} \frac{(n_{ij} - e_{ij})^2}{e_{ij}} = n\left(\sum_{i,j} \frac{n_{ij}^2}{n_{i\cdot}\, n_{\cdot j}} - 1\right)$$</div>
+            <p>It is zero exactly under perfect independence and grows with every departure from it. The scaling by $e_{ij}$ is natural: a count is roughly Poisson, with variance close to its mean, so each term is the square of an approximately standardized deviation. When $n$ is large and $H_0$ holds, $\chi^2$ follows approximately a <strong>chi-square distribution</strong> with</p>
+            <div class="formula-block">$$\nu = (r - 1)(c - 1)$$</div>
+            <p>degrees of freedom: the $rc - 1$ free cell probabilities, minus the $(r - 1) + (c - 1)$ marginal probabilities estimated from the data. Equivalently, once the margins are fixed, only $(r-1)(c-1)$ counts can be chosen freely; the last row and column are determined by the totals.</p>
+            <p>The <strong>p-value</strong> is the probability, under $H_0$, of a statistic at least as large as the observed one, $p = P(\chi^2_\nu \ge \chi^2_{\text{obs}})$. At significance level $\alpha$ we reject independence when $p &lt; \alpha$, or equivalently when $\chi^2_{\text{obs}}$ exceeds the critical value $\chi^2_{\nu,\,1-\alpha}$.</p>
+            <h4>Conditions and complements</h4>
+            <ul>
+              <li><strong>Independent observations.</strong> Each record must be a separate unit. Fifty failed logins from the same bot are not fifty independent observations, and they inflate $\chi^2$.</li>
+              <li><strong>Large expected counts.</strong> The chi-square approximation is reliable when all $e_{ij} \ge 5$ (Cochran's rule allows up to 20% of cells between 1 and 5). Otherwise one merges categories, or uses an exact or permutation test.</li>
+              <li><strong>Strength is not significance.</strong> $\chi^2$ grows linearly with $n$ for fixed proportions, so it measures the evidence, not the size of the association. <strong>Cramér's V</strong> rescales it to $[0, 1]$: $$V = \sqrt{\frac{\chi^2}{n\,(\min(r, c) - 1)}}$$ with $V = 0$ under perfect independence and $V = 1$ when one variable determines the other.</li>
+              <li><strong>Where the dependence lies.</strong> The <strong>adjusted residuals</strong> $\dfrac{n_{ij} - e_{ij}}{\sqrt{e_{ij}\,(1 - f_{i\cdot})(1 - f_{\cdot j})}}$ are approximately standard normal under $H_0$, so cells with $|r_{ij}| &gt; 2$ are those that deviate most from independence.</li>
+            </ul>
+          </section>
+
+          <!-- ============================================================ data -->
+          <section class="hw-card" aria-labelledby="data-heading">
+            <h3 id="data-heading">The dataset</h3>
+            <p>Everything below is computed in the browser from a list of raw records $(x_k, f_k)$, $k = 1, \dots, n$, one per observation (<a href="./independence.js">independence.js</a>). Four security datasets are generated record by record from a stated model with a fixed seed, so the true answer is known; the control dataset is independent by construction. You can also paste <strong>any</strong> bivariate categorical dataset, as two columns separated by a comma, semicolon or tab, with an optional header line.</p>
+            <form class="lab-controls" data-data-form>
+              <label class="lab-grow">Dataset <select name="dataset">
+                <option value="logins" selected>Authentication log: time of day × outcome</option>
+                <option value="ids">Network flows: protocol × IDS label</option>
+                <option value="ports">Control: server × source-port parity</option>
+                <option value="phishing">Phishing simulation: department × reaction</option>
+                <option value="endpoint">Endpoint telemetry: antivirus × infection (pooled)</option>
+                <option value="custom">My own data (CSV below)</option>
+              </select></label>
+              <label>Significance level α <select name="alpha">
+                <option value="0.1">0.10</option>
+                <option value="0.05" selected>0.05</option>
+                <option value="0.01">0.01</option>
+                <option value="0.001">0.001</option>
+              </select></label>
+              <label class="lab-grow" style="flex-basis:100%">Custom data: two columns X, F, one observation per line
+                <textarea name="csv" rows="6" spellcheck="false">browser,alert
+Chrome,none
+Chrome,none
+Firefox,malware
+Chrome,phishing
+Edge,none
+Firefox,none
+Edge,phishing
+Chrome,none
+Firefox,none
+Edge,malware
+Chrome,none
+Edge,none
+Firefox,phishing
+Chrome,malware
+Edge,none</textarea></label>
+              <button class="lab-button" type="submit"><i class="fa-solid fa-table" aria-hidden="true"></i>Build the table from my data</button>
+            </form>
+            <p class="keygen-note" data-data-error hidden></p>
+            <aside class="callout callout--info" data-model></aside>
+            <div class="stat-row" data-data-tiles></div>
+            <h4>First records</h4>
+            <div data-raw></div>
+          </section>
+
+          <!-- ============================================================ contingency -->
+          <section class="hw-card" aria-labelledby="table-heading">
+            <h3 id="table-heading">Contingency table, marginal and conditional frequencies</h3>
+            <p>The table is filled by one pass over the records: each record adds 1 to the cell of its pair of categories. Row and column sums give the marginal counts.</p>
+            <h4>Absolute frequencies $n_{ij}$ with margins</h4>
+            <div data-counts></div>
+            <h4>Joint relative frequencies $f_{ij}$ with marginal frequencies</h4>
+            <div data-joint></div>
+            <h4>Conditional frequencies of $F$ given $X$ (row profiles)</h4>
+            <div data-rowprof></div>
+            <h4>Conditional frequencies of $X$ given $F$ (column profiles)</h4>
+            <div data-colprof></div>
+            <figure class="chart chart--full"><figcaption><strong>Row profiles against the marginal distribution</strong>Under independence every bar would look like the last one, up to sampling noise</figcaption><div data-chart="profiles"></div></figure>
+            <p data-profile-comment></p>
+          </section>
+
+          <!-- ============================================================ expected -->
+          <section class="hw-card" aria-labelledby="exp-heading">
+            <h3 id="exp-heading">Expected frequencies under independence</h3>
+            <p>Each expected count is the row total times the column total divided by $n$. The expected table has the same margins as the observed one, and in it every row profile equals the marginal distribution of $F$.</p>
+            <h4>Expected frequencies $e_{ij}$</h4>
+            <div data-expected></div>
+            <h4>Observed minus expected, $n_{ij} - e_{ij}$</h4>
+            <div data-diff></div>
+            <p>The differences add up to zero along every row and every column, because the margins agree: this is why only $(r-1)(c-1)$ of them are free.</p>
+            <h4>Adjusted residuals</h4>
+            <div data-adjusted></div>
+            <p class="keygen-note">Blue: more observations than independence predicts; orange: fewer. The colour deepens with $|r_{ij}|$, and values beyond ±1.96 are in bold (two-sided 5% level for a single cell).</p>
+          </section>
+
+          <!-- ============================================================ chi-square -->
+          <section class="hw-card" aria-labelledby="chi-heading">
+            <h3 id="chi-heading">The chi-square statistic and the p-value</h3>
+            <div class="stat-row" data-chi-tiles></div>
+            <h4>Contributions $(n_{ij} - e_{ij})^2 / e_{ij}$</h4>
+            <div data-contrib></div>
+            <figure class="chart chart--full"><figcaption><strong>Null distribution $\chi^2_\nu$</strong>The shaded area is the rejection region at level α; the dashed line is the observed statistic</figcaption><div data-chart="density"></div></figure>
+            <p>The p-value is computed from the regularized incomplete gamma function, $P(\chi^2_\nu \ge x) = Q(\nu/2,\ x/2)$, with a series for small $x$ and a continued fraction in the tail, so that very small p-values keep their significant digits instead of rounding to zero. It matches the textbook values: $P(\chi^2_1 \ge 3.841) = 0.0500$ and $\chi^2_{3,\,0.95} = 7.815$.</p>
+            <h4>A check without the approximation: permutation test</h4>
+            <p>Shuffling the $F$ labels among the records keeps both margins and destroys any link between $X$ and $F$. Each shuffle therefore produces a table drawn from the null hypothesis. The fraction of shuffled tables whose $\chi^2$ is at least the observed one is a p-value that does not rely on the chi-square approximation; it is useful when some expected counts are small.</p>
+            <div class="lab-controls"><button class="lab-button" type="button" data-perm-run><i class="fa-solid fa-shuffle" aria-hidden="true"></i>Shuffle again (2,000 permutations)</button></div>
+            <div class="stat-row" data-perm-tiles></div>
+            <figure class="chart chart--full"><figcaption><strong>$\chi^2$ of 2,000 shuffled tables</strong>Histogram of the permutation distribution, with the $\chi^2_\nu$ density on top</figcaption><div data-chart="perm"></div></figure>
+          </section>
+
+          <!-- ============================================================ interpretation -->
+          <section class="hw-card" aria-labelledby="interp-heading">
+            <h3 id="interp-heading">Interpretation</h3>
+            <div data-interpretation></div>
+            <h4>All datasets at once</h4>
+            <div data-overview></div>
+            <p>The four generated datasets behave as their models say. The authentication log and the network flows are dependent beyond any reasonable doubt, with p-values of order $10^{-27}$ and $10^{-50}$. Their Cramér's V is only around 0.2–0.25, "weak" on Cohen's scale, which is a reminder that V summarizes the whole table: a failure rate of 35% at night against 10% during the day is operationally a very relevant difference. The control, where independence is true by construction, gives a p-value around 0.4: no reason to reject $H_0$, as it should be. The phishing campaign, with only 400 employees, sits in between: the dependence is detected at the 1% level but not at the 0.1% level, and it rests on a few cells, mainly the IT department, which reports the e-mail more often and clicks less.</p>
+            <aside class="callout callout--warning">
+              <strong>"Not rejected" does not mean "independent"</strong>
+              <p>A large p-value says that the data are <em>compatible</em> with independence, not that independence has been proved: a weak dependence in a small sample goes undetected. Conversely, with $\alpha = 0.05$ about one test in twenty on truly independent variables rejects $H_0$ by chance, which matters when many pairs of log fields are screened at once.</p>
+            </aside>
+          </section>
+
+          <!-- ============================================================ sample size -->
+          <section class="hw-card" aria-labelledby="size-heading">
+            <h3 id="size-heading">Significance, strength and sample size</h3>
+            <p>Multiplying every count by $k$ keeps all the conditional and marginal frequencies, and therefore the strength of the association, exactly as they are. But $\chi^2$ is multiplied by $k$ too, while the critical value does not change:</p>
+            <div data-scale></div>
+            <p>The same proportions can be "not significant" with a small sample and "extremely significant" with a large one, while Cramér's V stays fixed. In security telemetry, where millions of events are common, almost every pair of fields is significantly dependent, and the useful question is how strong the dependence is and whether it matters.</p>
+          </section>
+
+          <!-- ============================================================ causality -->
+          <section class="hw-card" aria-labelledby="cause-heading">
+            <h3 id="cause-heading">Association is not causation</h3>
+            <p>The chi-square test answers a question about the <strong>joint distribution</strong>: do the categories of $X$ and $F$ occur together more or less often than chance would explain? Rejecting independence establishes a <strong>statistical association</strong>. It says nothing about the <strong>mechanism</strong>, and in particular it does not say that changing $X$ would change $F$. The test is symmetric in $X$ and $F$, while causation has a direction. An observed association can come from:</p>
+            <ul>
+              <li><strong>a causal effect</strong> of $X$ on $F$;</li>
+              <li><strong>reverse causation</strong>, $F$ acting on $X$: ICMP flows are associated with Probe labels because scanning tools choose ICMP, not because the protocol causes attacks;</li>
+              <li><strong>a confounder</strong> $Z$ that influences both: failed logins are frequent at night because brute-force bots run at night, not because of the hour itself;</li>
+              <li><strong>selection bias</strong>: if only alerted flows are logged, the logged sample can show associations that do not exist in the traffic;</li>
+              <li><strong>chance</strong>: with many tests some associations are false positives.</li>
+            </ul>
+            <h4>An example of confounding: antivirus and infections</h4>
+            <p>The endpoint telemetry dataset pools 1,200 corporate and 800 home machines. Corporate machines have the antivirus more often (85% against 30%) and are much less exposed (4% against 22% infection probability). <strong>Within each environment the antivirus status and the infection are independent by construction</strong>: in this model the antivirus has no effect at all.</p>
+            <div class="chart-grid" data-strata></div>
+            <div data-strata-summary></div>
+            <p>The pooled table shows a highly significant association ($p \approx 10^{-15}$): machines with the antivirus are infected in 8% of the cases, those without in 20%, so the antivirus looks very effective. Yet within each environment the association disappears, as the p-values show. The pooled association is produced entirely by the confounder $Z$, the environment, which drives both variables. Here $X$ and $F$ are <strong>dependent but conditionally independent given $Z$</strong>. A naive reading of the pooled table would credit the antivirus with an effect that, in this model, it does not have.</p>
+            <p>The opposite can also happen: a real causal effect can be hidden, or even reversed, in a pooled table (Simpson's paradox). Causal conclusions need more than a contingency table: a <strong>randomized experiment</strong>, where $X$ is assigned at random so that no confounder can be linked to it (for example, assigning security training at random before a phishing simulation), or an observational analysis that measures and adjusts for the confounders, for instance by stratifying as above, together with domain knowledge about the direction of the effect.</p>
+          </section>
+
+          <!-- ============================================================ code -->
+          <section class="hw-card" aria-labelledby="code-heading">
+            <h3 id="code-heading">The code</h3>
+            <p>The core of the computation, from the records to the p-value:</p>
+            <div class="code-block">
+              <pre><code class="language-javascript">// 1. Contingency table: one pass over the raw records [x, f].
+const counts = xs.map(() => fs.map(() => 0));
+for (const [x, f] of records) counts[xIndex.get(x)][fIndex.get(f)] += 1;
+const rowTotals = counts.map((row) => row.reduce((a, b) => a + b, 0));       // n_i.
+const colTotals = fs.map((_, j) => counts.reduce((a, row) => a + row[j], 0)); // n_.j
+const n = rowTotals.reduce((a, b) => a + b, 0);
+
+// 2. Marginal and conditional frequencies.
+const rowMarginal = rowTotals.map((t) => t / n);                               // f_i.
+const rowProfiles = counts.map((row, i) => row.map((c) => c / rowTotals[i]));  // f(F | X)
+
+// 3. Expected counts under independence and Pearson's statistic.
+const E = rowTotals.map((r) => colTotals.map((c) => (r * c) / n));
+let chi2 = 0;
+counts.forEach((row, i) => row.forEach((o, j) => { chi2 += (o - E[i][j]) ** 2 / E[i][j]; }));
+const df = (xs.length - 1) * (fs.length - 1);
+
+// 4. p-value: upper tail of the chi-square distribution, Q(df/2, chi2/2).
+const pValue = gammaQ(df / 2, chi2 / 2);
+const cramersV = Math.sqrt(chi2 / (n * (Math.min(xs.length, fs.length) - 1)));</code></pre>
+            </div>
+          </section>
+
+          <!-- ============================================================ conclusions -->
+          <section class="hw-card" aria-labelledby="conc-heading">
+            <h3 id="conc-heading">Conclusions</h3>
+            <ul>
+              <li>Two categorical variables are independent when the joint distribution is the product of the marginals, or equivalently when the conditional distribution of one does not depend on the value of the other. In a table this means equal row profiles and $n_{ij} = n_{i\cdot}n_{\cdot j}/n$.</li>
+              <li>Exact independence is never observed in a sample, so it is tested: Pearson's $\chi^2$ measures the distance between the observed and the expected table, and under $H_0$ it is approximately $\chi^2_{(r-1)(c-1)}$. A permutation test gives the same answer without the approximation.</li>
+              <li>On the security datasets the test recovers the truth of the generating models: time of day and login outcome, and protocol and IDS label, are dependent; server and port parity are not; the phishing reaction depends on the department, more weakly.</li>
+              <li>The p-value measures evidence, Cramér's V measures strength, and the residuals locate the dependence. All three are needed for a sound interpretation.</li>
+              <li>A significant $\chi^2$ establishes association, not causation. The endpoint example shows a highly significant pooled association that vanishes once the confounder is taken into account.</li>
+            </ul>
+          </section>
+        </section>
+      </article>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <p class="footer-title">Statistics in Cybersecurity</p>
+        <nav class="footer-nav" aria-label="Footer navigation">
+          <a href="../../index.html"><i class="fa-solid fa-house" aria-hidden="true"></i>Home</a>
+          <a href="../../homework.html"><i class="fa-solid fa-book-open" aria-hidden="true"></i>Homework</a>
+          <a href="../../about.html"><i class="fa-solid fa-user" aria-hidden="true"></i>About</a>
+        </nav>
+        <div class="footer-contact">
+          <a href="mailto:desanctis.2046739@studenti.uniroma1.it"><i class="fa-regular fa-envelope" aria-hidden="true"></i>desanctis.2046739@studenti.uniroma1.it</a>
+          <p><i class="fa-solid fa-id-card" aria-hidden="true"></i>Matricola 2046739</p>
+        </div>
+        <p class="footer-copyright">© <span data-current-year></span> Giada De Sanctis</p>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

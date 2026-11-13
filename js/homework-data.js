@@ -1,5 +1,15 @@
 window.homeworkData = [
   {
+    number: '07',
+    label: 'Homework 6',
+    title: 'Statistical Independence: Contingency Tables and the Chi-Square Test on Security Data',
+    date: '2026-11-13',
+    file: './homework/hw6/index.html',
+    tags: ['Independence', 'Hypothesis testing', 'Statistics'],
+    description: "Contingency tables built programmatically from raw records of security datasets (authentication logs, IDS-labelled network flows, a phishing simulation, an independent control) or from any pasted bivariate dataset, with joint, marginal and conditional frequencies. Expected frequencies under independence, Pearson's chi-square statistic, its p-value from the incomplete gamma function, a permutation test, Cramér's V and adjusted residuals are used to decide whether the variables are independent, and a confounded antivirus example separates statistical association from causality.",
+    status: 'Submitted'
+  },
+  {
     number: '06',
     label: 'Homework 5',
     title: 'Riemann vs Lebesgue Integration and the Numerical Computation of the Normal CDF',
